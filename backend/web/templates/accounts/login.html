@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Sign in — {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<section class="wrap" style="max-width:440px">
+  <div class="card card-pad-lg">
+    <h1 style="font-size:1.6rem">Welcome back</h1>
+    <p class="muted">Sign in to report and track potholes.</p>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        {% for e in form.non_field_errors %}<div class="field-error" style="margin-bottom:12px">{{ e }}</div>{% endfor %}
+      {% endif %}
+      {% for field in form %}{% include "partials/form_field.html" %}{% endfor %}
+      <button class="btn btn-primary btn-block btn-lg" type="submit">Sign in</button>
+    </form>
+    <div class="row-between tiny" style="margin-top:18px">
+      <a href="{% url 'accounts:password_reset' %}">Forgot password?</a>
+      <a href="{% url 'accounts:register' %}">Create an account</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

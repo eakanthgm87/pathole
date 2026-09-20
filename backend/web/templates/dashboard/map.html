@@ -1,0 +1,45 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+{% block title %}Live map — {{ SITE_NAME }}{% endblock %}
+{% block dash_styles %}
+  <link rel="stylesheet" href="{% static 'vendor/ol/ol.css' %}">
+  <link rel="stylesheet" href="{% static 'css/map.css' %}">
+{% endblock %}
+
+{% block dash_content %}
+{{ geojson|json_script:"map-data" }}
+{{ wards_geojson|json_script:"wards-data" }}
+
+<div class="page-head">
+  <div><h1>Live map</h1><p class="muted">Every report, all statuses.</p></div>
+</div>
+
+{% include "partials/filter_bar.html" %}
+
+<div style="position:relative">
+  <div id="map" class="map-shell map-dark map-tall"
+       data-map data-geojson="map-data" data-wards="wards-data" data-zoom="12"></div>
+
+  <div class="map-panel map-panel-tr">
+    <div class="layer-toggle">
+      <label class="checkbox-row"><input type="checkbox" data-toggle-heat> Heatmap</label>
+      <label class="checkbox-row"><input type="checkbox" data-toggle-wards checked> Wards</label>
+    </div>
+    <hr class="divider" style="margin:12px 0">
+    <button class="btn btn-sm btn-block" data-locate>Locate me</button>
+  </div>
+
+  <div class="map-panel map-panel-bl">
+    <div class="legend">
+      <span><i style="color:var(--low);background:var(--low)"></i> Low</span>
+      <span><i style="color:var(--medium);background:var(--medium)"></i> Medium</span>
+      <span><i style="color:var(--high);background:var(--high)"></i> High</span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{% static 'vendor/ol/ol.js' %}"></script>
+  <script type="module" src="{% static 'js/map.js' %}"></script>
+{% endblock %}

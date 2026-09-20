@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Report a pothole — {{ SITE_NAME }}{% endblock %}
+{% block styles %}
+  <link rel="stylesheet" href="{% static 'vendor/ol/ol.css' %}">
+  <link rel="stylesheet" href="{% static 'css/map.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="wrap">
+  <div class="row-between row-wrap" style="margin-bottom:22px">
+    <div>
+      <h1 style="margin-bottom:4px">Report a pothole</h1>
+      <p class="muted" style="margin:0">A photo and a location is all we need.</p>
+    </div>
+    <a class="btn" href="{% url 'web:live' %}">Use live video instead →</a>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="card" style="border-color:var(--danger);margin-bottom:18px">
+        {% for e in form.non_field_errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="split split-even">
+
+      <div class="card stack">
+        <h3 style="margin:0">1. The photo</h3>
+
+        <div class="detect-canvas-wrap" style="aspect-ratio:4/3;display:grid;place-items:center">
+          <div data-preview-placeholder class="center faint" style="padding:24px">
+            <div style="font-size:2.4rem">📷</div>
+            <div class="tiny">Choose a file or use your camera</div>
+          </div>
+          <img data-preview hidden alt="Selected photo preview"
+               style="width:100%;height:100%;object-fit:contain">
+        </div>
+
+        {% include "partials/form_field.html" with field=form.image %}
+
+        <div data-webcam-wrap hidden class="detect-canvas-wrap">
+          <video data-webcam-video playsinline muted style="width:100%"></video>
+        </div>
+        <div class="row" style="gap:8px">
+          <button type="button" class="btn btn-sm" data-webcam-start>Use webcam</button>
+          <button type="button" class="btn btn-sm btn-primary" data-webcam-shoot hidden>Capture frame</button>
+        </div>
+
+        {% include "partials/form_field.html" with field=form.notes %}
+      </div>
+
+      <div class="card stack">
+        <h3 style="margin:0">2. Where is it?</h3>
+
+        <div class="row-between">
+          <span class="tiny faint" data-loc-status>Locating…</span>
+          <button type="button" class="btn btn-sm" data-locate-me>Use my location</button>
+        </div>
+
+        <div style="position:relative">
+          <div id="map" class="map-shell map-dark" style="height:330px"
+               data-map data-picker="true"
+               data-lat-input="#id_latitude" data-lng-input="#id_longitude"
+               data-zoom="14"></div>
+          <div class="picker-hint">Tap the map to place the pin exactly</div>
+        </div>
+
+        {{ form.latitude }}{{ form.longitude }}{{ form.accuracy_m }}
+        {% for e in form.latitude.errors %}<div class="field-error">A location is required. {{ e }}</div>{% endfor %}
+
+        <div class="row" style="justify-content:center">
+          {% include "partials/sparkle_button.html" with label="Analyse and submit" type="submit" %}
+        </div>
+        <p class="tiny faint" style="margin:0">
+          Your photo is stripped of EXIF metadata before it is stored, and your name is never
+          shown on the public map.
+        </p>
+      </div>
+    </div>
+  </form>
+</section>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{% static 'vendor/ol/ol.js' %}"></script>
+  <script type="module" src="{% static 'js/map.js' %}"></script>
+  <script type="module" src="{% static 'js/upload.js' %}"></script>
+{% endblock %}

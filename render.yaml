@@ -1,0 +1,87 @@
+# Render blueprint for PotholeWatch.
+#
+# Deploy: push this repo to GitHub, then Render Dashboard -> New -> Blueprint
+# and point it at the repo. Everything below is created for you.
+#
+# Read this before you deploy:
+#
+# 1. MEMORY. PyTorch + Ultralytics + the active model is roughly 1.2-1.5 GB
+#    resident. The free tier (512 MB) will OOM on the first upload. `standard`
+#    (2 GB) is the realistic floor.
+#
+# 2. ONE WORKER. Each gunicorn worker loads its own copy of the model, so two
+#    workers means two copies and an OOM on a 2 GB box. One worker with
+#    threads handles concurrent requests without duplicating the weights.
+#
+# 3. WEIGHTS MUST BE IN GIT. Render builds from the repo; weights/*.pt are
+#    deliberately not gitignored. Without them every upload returns
+#    "analysis failed".
+#
+# 4. UPLOADS NEED A DISK. Render's filesystem is ephemeral: without the disk
+#    below, every reported photo disappears on the next deploy. For anything
+#    beyond a demo, use S3 instead (set USE_S3=1 and the AWS_* vars; the
+#    settings already support django-storages).
+
+services:
+  - type: web
+    name: potholewatch
+    runtime: python
+    plan: standard              # 2 GB RAM. `free` will OOM on inference.
+    region: singapore           # nearest region to the Indian road data
+    branch: main
+    buildCommand: "bash deploy/render-build.sh"
+    # One worker: see note 2. Threads cover concurrency; the timeout is
+    # generous because a cold first request also loads the model.
+    startCommand: "cd backend && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 180"
+    healthCheckPath: /api/v1/health/
+
+    # Persistent storage for uploaded photos (see note 4). MEDIA_ROOT is
+    # backend/media, so the mount path must match it exactly.
+    disk:
+      name: media
+      mountPath: /opt/render/project/src/backend/media
+      sizeGB: 5
+
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.prod
+      - key: SECRET_KEY
+        generateValue: true
+
+      # ALLOWED_HOSTS and CSRF_TRUSTED_ORIGINS are filled in automatically by
+      # config/settings/prod.py from RENDER_EXTERNAL_HOSTNAME, which Render
+      # injects. Add a custom domain here as a comma-separated list.
+      - key: ALLOWED_HOSTS
+        value: ""
+
+      - key: DATABASE_URL
+        fromDatabase:
+          name: potholewatch-db
+          property: connectionString
+
+      # The repo root on Render is /opt/render/project/src.
+      - key: WEIGHTS_DIR
+        value: /opt/render/project/src/weights
+
+      # Single-pass profile: 90.9% recall at ~365 ms and one model in memory.
+      # The `accurate` profile loads three models and will not fit in 2 GB.
+      - key: UPLOAD_PROFILE
+        value: fast
+      - key: LIVE_PROFILE
+        value: live
+
+      # No Redis in this blueprint, so Celery runs inline.
+      - key: CELERY_EAGER
+        value: "1"
+
+      - key: WEB_CONCURRENCY
+        value: "1"
+      - key: LOG_LEVEL
+        value: INFO
+
+databases:
+  - name: potholewatch-db
+    plan: basic-256mb
+    region: singapore

@@ -1,0 +1,88 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static humanize %}
+{% block title %}Analytics — {{ SITE_NAME }}{% endblock %}
+
+{% block dash_content %}
+<div class="page-head">
+  <div><h1>Analytics</h1><p class="muted">Trends across the last {{ days }} days.</p></div>
+  <form method="get" class="row" style="gap:8px">
+    <select name="days" class="field-input" style="width:auto" onchange="this.form.submit()">
+      <option value="7"   {% if days == 7 %}selected{% endif %}>7 days</option>
+      <option value="30"  {% if days == 30 %}selected{% endif %}>30 days</option>
+      <option value="90"  {% if days == 90 %}selected{% endif %}>90 days</option>
+      <option value="365" {% if days == 365 %}selected{% endif %}>1 year</option>
+    </select>
+    <noscript><button class="btn btn-sm" type="submit">Go</button></noscript>
+  </form>
+</div>
+
+{{ trend|json_script:"trend-data" }}
+{{ severity_mix|json_script:"sev-data" }}
+{{ status_mix|json_script:"status-data" }}
+{{ top_wards|json_script:"wards-data" }}
+{{ ttf|json_script:"ttf-data" }}
+
+<div class="grid grid-4" style="margin-bottom:18px">
+  <div class="kpi"><div class="kpi-label">Total</div><div class="kpi-value">{{ kpis.total|intcomma }}</div></div>
+  <div class="kpi kpi-warn"><div class="kpi-label">Open</div><div class="kpi-value">{{ kpis.open|intcomma }}</div></div>
+  <div class="kpi kpi-ok"><div class="kpi-label">Fixed this month</div><div class="kpi-value">{{ kpis.fixed_month|intcomma }}</div></div>
+  <div class="kpi">
+    <div class="kpi-label">Avg time to fix</div>
+    <div class="kpi-value">{% if kpis.avg_fix_days %}{{ kpis.avg_fix_days }}<span style="font-size:1rem"> d</span>{% else %}—{% endif %}</div>
+  </div>
+</div>
+
+<div class="card chart-card" style="margin-bottom:18px">
+  <h3>Reports over time</h3>
+  <div class="chart-box"><canvas data-chart="line" data-chart-data="trend-data"></canvas></div>
+</div>
+
+<div class="grid grid-3" style="margin-bottom:18px">
+  <div class="card chart-card">
+    <h3>Severity mix</h3>
+    <div class="chart-box chart-box-sm"><canvas data-chart="donut" data-chart-data="sev-data" data-chart-palette="severity"></canvas></div>
+  </div>
+  <div class="card chart-card">
+    <h3>Status mix</h3>
+    <div class="chart-box chart-box-sm"><canvas data-chart="donut" data-chart-data="status-data"></canvas></div>
+  </div>
+  <div class="card chart-card">
+    <h3>Time to fix</h3>
+    <div class="chart-box chart-box-sm"><canvas data-chart="bar" data-chart-data="ttf-data"></canvas></div>
+  </div>
+</div>
+
+<div class="split split-even">
+  <div class="card chart-card">
+    <h3>Reports by ward</h3>
+    <div class="chart-box"><canvas data-chart="bar" data-chart-data="wards-data" data-chart-horizontal="true"></canvas></div>
+  </div>
+
+  <div class="card card-flush">
+    <h3 style="padding:16px 18px 0;margin:0">Hotspots</h3>
+    <p class="tiny faint" style="padding:4px 18px 0">Locations reported more than once.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th></th><th>Location</th><th>Reports</th><th>Severity</th></tr></thead>
+        <tbody>
+          {% for r in hotspots %}
+            <tr onclick="location.href='{% url 'web:dashboard_report' r.id %}'" style="cursor:pointer">
+              <td>{% if r.thumbnail %}<img class="thumb-xs" src="{{ r.thumbnail.url }}" alt="">{% endif %}</td>
+              <td class="tiny">{{ r.address|default:"Unknown"|truncatechars:36 }}</td>
+              <td><strong>×{{ r.report_count }}</strong></td>
+              <td><span class="chip chip-{{ r.severity }}">{{ r.severity }}</span></td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="4" class="center faint" style="padding:30px">No repeat locations yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{% static 'vendor/chartjs/chart.umd.js' %}"></script>
+  <script type="module" src="{% static 'js/charts.js' %}"></script>
+{% endblock %}

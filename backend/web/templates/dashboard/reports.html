@@ -1,0 +1,78 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+{% block title %}Reports — {{ SITE_NAME }}{% endblock %}
+
+{% block dash_content %}
+<div class="page-head">
+  <div>
+    <h1>Reports</h1>
+    <p class="muted">{{ page_obj.paginator.count }} matching</p>
+  </div>
+  <a class="btn btn-sm" href="{% url 'web:dashboard_export' %}?{{ querystring }}">Export CSV</a>
+</div>
+
+{% include "partials/filter_bar.html" %}
+
+<form method="post" action="{% url 'web:dashboard_bulk' %}">
+  {% csrf_token %}
+  <input type="hidden" name="querystring" value="{{ querystring }}">
+
+  <div class="card card-flush" data-bulk-table>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:34px"><input type="checkbox" data-check-all aria-label="Select all"></th>
+            <th></th>
+            <th>Location</th>
+            <th>Severity</th>
+            <th>Status</th>
+            <th>Conf.</th>
+            <th>Count</th>
+            <th>Source</th>
+            <th>Created</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in page_obj %}
+            <tr>
+              <td><input type="checkbox" data-check value="{{ r.id }}" aria-label="Select report"></td>
+              <td>{% if r.thumbnail %}<img class="thumb-xs" src="{{ r.thumbnail.url }}" alt="">{% endif %}</td>
+              <td>
+                <div class="tiny">{{ r.address|default:"Unknown"|truncatechars:42 }}</div>
+                <div class="tiny faint mono">{{ r.latitude|floatformat:4 }}, {{ r.longitude|floatformat:4 }}</div>
+              </td>
+              <td><span class="chip chip-{{ r.severity }}">{{ r.severity }}</span></td>
+              <td><span class="chip chip-{{ r.workflow_status }} chip-plain">{{ r.get_workflow_status_display }}</span></td>
+              <td class="mono">{{ r.confidence|floatformat:2 }}</td>
+              <td>{% if r.report_count > 1 %}<strong>×{{ r.report_count }}</strong>{% else %}<span class="faint">1</span>{% endif %}</td>
+              <td class="tiny faint">{{ r.get_source_display }}</td>
+              <td class="tiny faint nowrap">{{ r.created_at|date:"j M, H:i" }}</td>
+              <td><a class="btn btn-sm" href="{% url 'web:dashboard_report' r.id %}">Manage</a></td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="10" class="center faint" style="padding:40px">No reports match those filters.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="bulk-bar" data-bulk-bar>
+    <strong><span data-bulk-count>0</span> selected</strong>
+    <input type="hidden" name="report_ids" value="">
+    <select name="action" class="field-input" style="width:auto">
+      <option value="verify">Verify</option>
+      <option value="in_progress">Mark in progress</option>
+      <option value="reject">Reject</option>
+    </select>
+    <input type="text" name="note" class="field-input" placeholder="Note (required to reject)" style="width:240px">
+    <button class="btn btn-sm btn-primary" type="submit">Apply</button>
+  </div>
+</form>
+
+{% include "partials/pagination.html" %}
+{% endblock %}
+
+{% block scripts %}<script type="module" src="{% static 'js/table.js' %}"></script>{% endblock %}

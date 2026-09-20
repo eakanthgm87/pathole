@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block styles %}
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+  {% block dash_styles %}{% endblock %}
+{% endblock %}
+
+{% block sidebar_toggle %}
+  <button class="nav-toggle" data-side-toggle aria-label="Toggle sidebar" style="display:none">☰</button>
+{% endblock %}
+
+{% block footer %}{% endblock %}
+
+{% block content %}
+<div class="dash">
+  <aside class="dash-side">
+    <h6>Operations</h6>
+    <a class="side-link {% if request.resolver_match.url_name == 'dashboard_overview' %}active{% endif %}"
+       href="{% url 'web:dashboard_overview' %}"><span class="ico">◈</span> Overview</a>
+    <a class="side-link {% if request.resolver_match.url_name == 'dashboard_map' %}active{% endif %}"
+       href="{% url 'web:dashboard_map' %}"><span class="ico">◉</span> Live map</a>
+    <a class="side-link {% if request.resolver_match.url_name == 'dashboard_reports' %}active{% endif %}"
+       href="{% url 'web:dashboard_reports' %}"><span class="ico">▤</span> Reports</a>
+    <a class="side-link {% if request.resolver_match.url_name == 'dashboard_review' %}active{% endif %}"
+       href="{% url 'web:dashboard_review' %}"><span class="ico">◍</span> Review queue</a>
+    <a class="side-link {% if request.resolver_match.url_name == 'dashboard_tasks' %}active{% endif %}"
+       href="{% url 'web:dashboard_tasks' %}"><span class="ico">✓</span> My tasks</a>
+
+    <h6>Insight</h6>
+    <a class="side-link {% if request.resolver_match.url_name == 'dashboard_analytics' %}active{% endif %}"
+       href="{% url 'web:dashboard_analytics' %}"><span class="ico">◐</span> Analytics</a>
+    <a class="side-link {% if request.resolver_match.url_name == 'dashboard_wards' %}active{% endif %}"
+       href="{% url 'web:dashboard_wards' %}"><span class="ico">◰</span> Wards</a>
+
+    {% if user.is_admin %}
+      <h6>Administration</h6>
+      <a class="side-link {% if request.resolver_match.url_name == 'dashboard_users' %}active{% endif %}"
+         href="{% url 'web:dashboard_users' %}"><span class="ico">◎</span> Users</a>
+      <a class="side-link {% if request.resolver_match.url_name == 'dashboard_settings' %}active{% endif %}"
+         href="{% url 'web:dashboard_settings' %}"><span class="ico">⚙</span> Model &amp; settings</a>
+      <a class="side-link" href="/admin/"><span class="ico">▣</span> Django admin</a>
+    {% endif %}
+
+    <h6>Public site</h6>
+    <a class="side-link" href="{% url 'web:map' %}"><span class="ico">↗</span> Public map</a>
+    <a class="side-link" href="{% url 'web:live' %}"><span class="ico">◉</span> Live detection</a>
+  </aside>
+
+  <div class="dash-main">
+    {% block dash_content %}{% endblock %}
+  </div>
+</div>
+{% endblock %}

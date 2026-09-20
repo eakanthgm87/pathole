@@ -1,0 +1,182 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+{% block title %}Manage report — {{ SITE_NAME }}{% endblock %}
+{% block dash_styles %}
+  <link rel="stylesheet" href="{% static 'vendor/ol/ol.css' %}">
+  <link rel="stylesheet" href="{% static 'css/map.css' %}">
+{% endblock %}
+
+{% block dash_content %}
+{{ detections_json|json_script:"detections-data" }}
+
+<div class="page-head">
+  <div>
+    <h1>Manage report</h1>
+    <div class="row row-wrap" style="gap:8px;margin-top:6px">
+      <span class="chip chip-{{ report.severity }}">{{ report.get_severity_display }}{% if report.severity_overridden %} (manual){% endif %}</span>
+      <span class="chip chip-{{ report.workflow_status }} chip-plain">{{ report.get_workflow_status_display }}</span>
+      <span class="chip chip-{{ report.detection_status }} chip-plain">{{ report.get_detection_status_display }}</span>
+      <span class="mono tiny faint">{{ report.id }}</span>
+    </div>
+  </div>
+  <a class="btn btn-sm" href="{% url 'web:dashboard_reports' %}">← Back to list</a>
+</div>
+
+<div class="manage-grid">
+  <div class="stack">
+    <div class="detect-canvas-wrap">
+      <img data-result-image src="{{ report.image.url }}" alt="Reported pothole" style="display:none">
+      <canvas data-result-canvas></canvas>
+    </div>
+
+    {% if proofs %}
+      <div class="card">
+        <h3 style="margin-top:0">Repair proof</h3>
+        <div class="grid grid-2">
+          {% for p in proofs %}
+            <div>
+              <img src="{{ p.after_image.url }}" alt="After repair" style="width:100%;border-radius:var(--radius-sm)">
+              <div class="tiny faint" style="margin-top:6px">
+                {{ p.created_at|date:"j M Y, H:i" }}{% if p.created_by %} · {{ p.created_by.display_name }}{% endif %}
+              </div>
+              {% if p.note %}<div class="tiny">{{ p.note }}</div>{% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="card">
+      <h3 style="margin-top:0">Comments &amp; internal notes</h3>
+      {% for c in comments %}
+        <div style="padding:10px 0;border-bottom:1px solid var(--stroke)">
+          <div class="row-between">
+            <strong class="tiny">
+              {{ c.author.display_name|default:"Removed user" }}
+              {% if c.is_internal %}<span class="chip chip-plain">internal</span>{% endif %}
+            </strong>
+            <span class="tiny faint">{{ c.created_at|date:"j M, H:i" }}</span>
+          </div>
+          <p class="tiny" style="margin:4px 0 0">{{ c.body }}</p>
+        </div>
+      {% empty %}
+        <p class="tiny faint">No comments.</p>
+      {% endfor %}
+      <form method="post" action="{% url 'web:report_comment' report.id %}" style="margin-top:14px">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{% url 'web:dashboard_report' report.id %}">
+        {% include "partials/form_field.html" with field=comment_form.body %}
+        <label class="checkbox-row tiny" style="margin-bottom:10px">
+          {{ comment_form.is_internal }} Internal note
+        </label>
+        <button class="btn btn-sm btn-primary" type="submit">Post</button>
+      </form>
+    </div>
+  </div>
+
+  <aside class="stack">
+    <div class="card">
+      <h3 style="margin-top:0">Metadata</h3>
+      <dl class="meta-list">
+        <dt>Confidence</dt><dd class="mono">{{ report.confidence|floatformat:4 }}</dd>
+        <dt>Severity score</dt><dd class="mono">{{ report.severity_score }}</dd>
+        <dt>Boxes</dt><dd>{{ report.detections|length }}</dd>
+        <dt>Model</dt><dd class="tiny">{{ report.model_version.name|default:"default" }}</dd>
+        <dt>Source</dt><dd class="tiny">{{ report.get_source_display }}</dd>
+        <dt>GPS accuracy</dt><dd class="tiny">{% if report.accuracy_m %}±{{ report.accuracy_m|floatformat:0 }}m{% else %}unknown{% endif %}</dd>
+        <dt>Ward</dt><dd class="tiny">{{ report.ward.name|default:"unassigned" }}</dd>
+        <dt>Reports merged</dt><dd>{{ report.report_count }}</dd>
+        <dt>Reporter</dt><dd class="tiny">{{ report.reporter.display_name|default:"anonymous" }}</dd>
+        <dt>Created</dt><dd class="tiny">{{ report.created_at|date:"j M Y, H:i" }}</dd>
+      </dl>
+      {% if report.address %}<p class="tiny faint" style="margin:12px 0 0">{{ report.address }}</p>{% endif %}
+      {% if report.duplicate_of %}
+        <p class="tiny" style="margin-top:10px">
+          Duplicate of <a href="{% url 'web:dashboard_report' report.duplicate_of.id %}">{{ report.duplicate_of.id|truncatechars:10 }}</a>
+        </p>
+      {% endif %}
+    </div>
+
+    <div class="card card-flush">
+      <div id="map" class="map-shell map-dark map-mini"
+           data-map data-zoom="17" data-center="{{ report.longitude }},{{ report.latitude }}"></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">Actions</h3>
+
+      <form method="post" action="{% url 'web:dashboard_status' report.id %}" class="row" style="gap:8px;margin-bottom:12px">
+        {% csrf_token %}
+        <button class="btn btn-sm btn-ok grow" name="to_status" value="verified" type="submit">Verify</button>
+        <button class="btn btn-sm grow" name="to_status" value="in_progress" type="submit">In progress</button>
+      </form>
+
+      <details style="margin-bottom:12px">
+        <summary class="btn btn-sm btn-danger btn-block">Reject</summary>
+        <form method="post" action="{% url 'web:dashboard_status' report.id %}" style="margin-top:10px">
+          {% csrf_token %}
+          <input type="hidden" name="to_status" value="rejected">
+          <textarea name="note" class="field-input" rows="2" placeholder="Reason (required)" required></textarea>
+          <button class="btn btn-sm btn-danger btn-block" style="margin-top:8px" type="submit">Confirm rejection</button>
+        </form>
+      </details>
+
+      <details style="margin-bottom:12px">
+        <summary class="btn btn-sm btn-block">Assign to officer</summary>
+        <form method="post" action="{% url 'web:dashboard_assign' report.id %}" style="margin-top:10px">
+          {% csrf_token %}
+          {% for field in assign_form %}{% include "partials/form_field.html" %}{% endfor %}
+          <button class="btn btn-sm btn-primary btn-block" type="submit">Assign</button>
+        </form>
+      </details>
+
+      <details style="margin-bottom:12px">
+        <summary class="btn btn-sm btn-ok btn-block">Mark fixed (after-photo)</summary>
+        <form method="post" action="{% url 'web:dashboard_fix' report.id %}" enctype="multipart/form-data" style="margin-top:10px">
+          {% csrf_token %}
+          {% for field in fix_form %}{% include "partials/form_field.html" %}{% endfor %}
+          <button class="btn btn-sm btn-ok btn-block" type="submit">Close as fixed</button>
+        </form>
+      </details>
+
+      <details style="margin-bottom:12px">
+        <summary class="btn btn-sm btn-block">Override severity</summary>
+        <form method="post" action="{% url 'web:dashboard_severity' report.id %}" style="margin-top:10px">
+          {% csrf_token %}
+          <select name="severity" class="field-input">
+            {% for value, label in severity_form.fields.severity.choices %}
+              <option value="{{ value }}" {% if value == report.severity %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          <button class="btn btn-sm btn-block" style="margin-top:8px" type="submit">Save severity</button>
+        </form>
+      </details>
+
+      <details style="margin-bottom:12px">
+        <summary class="btn btn-sm btn-block">Mark as duplicate</summary>
+        <form method="post" action="{% url 'web:dashboard_duplicate' report.id %}" style="margin-top:10px">
+          {% csrf_token %}
+          <input type="text" name="parent_id" class="field-input" placeholder="Parent report UUID" required>
+          <button class="btn btn-sm btn-block" style="margin-top:8px" type="submit">Merge into parent</button>
+        </form>
+      </details>
+
+      <form method="post" action="{% url 'web:dashboard_reanalyze' report.id %}">
+        {% csrf_token %}
+        <button class="btn btn-sm btn-block" type="submit">Re-run detection</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">History</h3>
+      {% include "partials/timeline.html" %}
+    </div>
+  </aside>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{% static 'vendor/ol/ol.js' %}"></script>
+  <script type="module" src="{% static 'js/map.js' %}"></script>
+  <script type="module" src="{% static 'js/upload.js' %}"></script>
+{% endblock %}

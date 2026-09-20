@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  DEBUG ONLY. Allows plain HTTP so the app can talk to a dev server on the
+  LAN (http://192.168.x.x:8000) or the emulator host. The release build uses
+  main/res/xml/network_security_config.xml, which refuses cleartext.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

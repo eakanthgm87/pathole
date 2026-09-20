@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Create account — {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<section class="wrap" style="max-width:480px">
+  <div class="card card-pad-lg">
+    <h1 style="font-size:1.6rem">Create your account</h1>
+    <p class="muted">Free, and takes about twenty seconds.</p>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% for field in form %}{% include "partials/form_field.html" %}{% endfor %}
+      <button class="btn btn-primary btn-block btn-lg" type="submit">Create account</button>
+    </form>
+    <p class="tiny center" style="margin-top:18px">
+      Already have one? <a href="{% url 'accounts:login' %}">Sign in</a>
+    </p>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Not found{% endblock %}
+{% block content %}
+<section class="wrap-narrow center">
+  <div class="card card-pad-lg">
+    <div style="font-size:3rem">🕳️</div>
+    <h1>That page fell in a pothole</h1>
+    <p>Nothing lives at this address.</p>
+    <a class="btn btn-primary" href="{% url 'web:map' %}">Open the map</a>
+  </div>
+</section>
+{% endblock %}

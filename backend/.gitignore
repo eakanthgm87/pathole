@@ -1,0 +1,13 @@
+# Backend-local ignores. The root .gitignore covers most of this; these are
+# here so the rules still apply if the backend is ever split into its own repo.
+__pycache__/
+*.py[cod]
+
+# Secrets. Commit .env.example instead.
+.env
+!.env.example
+
+db.sqlite3
+media/
+staticfiles/
+*.log

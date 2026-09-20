@@ -1,0 +1,64 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Users — {{ SITE_NAME }}{% endblock %}
+{% block dash_content %}
+<div class="page-head">
+  <div><h1>Users</h1><p class="muted">{{ users|length }} accounts.</p></div>
+</div>
+
+<div class="card card-flush">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>User</th><th>Role</th><th>Ward</th><th>Status</th><th>Joined</th><th></th></tr></thead>
+      <tbody>
+        {% for u in users %}
+          <tr>
+            <td>
+              <div class="row" style="gap:10px">
+                <span class="avatar">{{ u.initials }}</span>
+                <div><strong>{{ u.display_name }}</strong><div class="tiny faint">{{ u.email }}</div></div>
+              </div>
+            </td>
+            <td>
+              <form method="post" class="row" style="gap:6px">{% csrf_token %}
+                <input type="hidden" name="action" value="role">
+                <input type="hidden" name="user_id" value="{{ u.id }}">
+                <select name="role" class="field-input" style="width:auto" onchange="this.form.submit()">
+                  <option value="citizen" {% if u.role == 'citizen' %}selected{% endif %}>Citizen</option>
+                  <option value="officer" {% if u.role == 'officer' %}selected{% endif %}>Officer</option>
+                  <option value="admin"   {% if u.role == 'admin' %}selected{% endif %}>Admin</option>
+                </select>
+              </form>
+            </td>
+            <td>
+              <form method="post">{% csrf_token %}
+                <input type="hidden" name="action" value="ward">
+                <input type="hidden" name="user_id" value="{{ u.id }}">
+                <select name="ward" class="field-input" style="width:auto" onchange="this.form.submit()">
+                  <option value="">—</option>
+                  {% for w in wards %}
+                    <option value="{{ w.id }}" {% if u.ward_id == w.id %}selected{% endif %}>{{ w.name }}</option>
+                  {% endfor %}
+                </select>
+              </form>
+            </td>
+            <td>
+              {% if u.is_active %}<span class="chip chip-fixed">active</span>
+              {% else %}<span class="chip chip-rejected">disabled</span>{% endif %}
+            </td>
+            <td class="tiny faint nowrap">{{ u.created_at|date:"j M Y" }}</td>
+            <td>
+              <form method="post">{% csrf_token %}
+                <input type="hidden" name="action" value="toggle">
+                <input type="hidden" name="user_id" value="{{ u.id }}">
+                <button class="btn btn-sm {% if u.is_active %}btn-danger{% else %}btn-ok{% endif %}" type="submit">
+                  {% if u.is_active %}Disable{% else %}Enable{% endif %}
+                </button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+{% block title %}Wards — {{ SITE_NAME }}{% endblock %}
+{% block dash_styles %}
+  <link rel="stylesheet" href="{% static 'vendor/ol/ol.css' %}">
+  <link rel="stylesheet" href="{% static 'css/map.css' %}">
+{% endblock %}
+
+{% block dash_content %}
+{{ wards_geojson|json_script:"wards-data" }}
+
+<div class="page-head">
+  <div><h1>Wards</h1><p class="muted">Boundaries used to attribute each report.</p></div>
+</div>
+
+<div class="split split-aside">
+  <div class="card card-flush">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Code</th><th>Name</th><th>Reports</th><th>Boundary</th></tr></thead>
+        <tbody>
+          {% for w in wards %}
+            <tr>
+              <td class="mono tiny">{{ w.code }}</td>
+              <td>{{ w.name }}</td>
+              <td><strong>{{ w.n }}</strong></td>
+              <td>{% if w.boundary %}<span class="chip chip-fixed">loaded</span>{% else %}<span class="chip chip-plain faint">none</span>{% endif %}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="4" class="center faint" style="padding:34px">No wards yet. Import a GeoJSON file.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <aside class="stack">
+    {% if user.is_admin %}
+      <div class="card">
+        <h3 style="margin-top:0">Import boundaries</h3>
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          {% for field in import_form %}{% include "partials/form_field.html" %}{% endfor %}
+          <button class="btn btn-primary btn-block" type="submit">Import GeoJSON</button>
+        </form>
+        <p class="tiny faint" style="margin-top:10px">
+          Each feature needs <code>name</code> and <code>code</code> properties. Existing codes are updated.
+        </p>
+      </div>
+    {% endif %}
+
+    <div class="card card-flush">
+      <div id="map" class="map-shell map-dark" style="height:300px"
+           data-map data-wards="wards-data" data-zoom="11"></div>
+    </div>
+  </aside>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{% static 'vendor/ol/ol.js' %}"></script>
+  <script type="module" src="{% static 'js/map.js' %}"></script>
+{% endblock %}

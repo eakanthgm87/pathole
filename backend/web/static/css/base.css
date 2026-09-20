@@ -1,0 +1,750 @@
+/* PotholeWatch design system
+   Pure black canvas, translucent glass surfaces, ambient colour bloom.
+   Everything is a token; components never hardcode a colour. */
+
+:root {
+  /* Canvas: true #000 so OLED panels actually switch pixels off. */
+  --bg: #000000;
+  --bg-elev: #07070a;
+
+  /* Glass: translucent white over black, layered by elevation. */
+  --glass-1: rgba(255, 255, 255, 0.035);
+  --glass-2: rgba(255, 255, 255, 0.06);
+  --glass-3: rgba(255, 255, 255, 0.09);
+  --stroke: rgba(255, 255, 255, 0.10);
+  --stroke-strong: rgba(255, 255, 255, 0.18);
+
+  --text: #f4f5f7;
+  --text-dim: #a8adb8;
+  --text-faint: #6c7280;
+
+  /* Accent: a single cyan-violet ramp drives the whole product. */
+  --accent: #5b8cff;
+  --accent-2: #9d6bff;
+  --accent-soft: rgba(91, 140, 255, 0.16);
+  --accent-glow: rgba(91, 140, 255, 0.45);
+
+  --low: #35d0a5;
+  --medium: #f5b83d;
+  --high: #ff5a6e;
+  --ok: #35d0a5;
+  --warn: #f5b83d;
+  --danger: #ff5a6e;
+  --info: #5b8cff;
+
+  --radius-sm: 10px;
+  --radius: 16px;
+  --radius-lg: 24px;
+  --radius-pill: 999px;
+
+  --blur-sm: 8px;
+  --blur: 18px;
+  --blur-lg: 40px;
+
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 24px 70px rgba(0, 0, 0, 0.75);
+
+  --space: 16px;
+  --header-h: 64px;
+  --sidebar-w: 248px;
+
+  --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Light mode is a courtesy, not the design target: the product is a
+   night-first field tool. Opt in with data-theme="light". */
+:root[data-theme="light"] {
+  --bg: #f6f7fb;
+  --bg-elev: #ffffff;
+  --glass-1: rgba(12, 14, 22, 0.03);
+  --glass-2: rgba(12, 14, 22, 0.05);
+  --glass-3: rgba(12, 14, 22, 0.08);
+  --stroke: rgba(12, 14, 22, 0.10);
+  --stroke-strong: rgba(12, 14, 22, 0.18);
+  --text: #0d0f16;
+  --text-dim: #4a5060;
+  --text-faint: #7b8292;
+  --shadow: 0 8px 28px rgba(16, 20, 40, 0.12);
+  --shadow-lg: 0 24px 60px rgba(16, 20, 40, 0.18);
+}
+
+* { box-sizing: border-box; }
+
+/* The HTML `hidden` attribute must win over component display rules.
+   Without this, `.btn { display: inline-flex }` beats the UA stylesheet's
+   `[hidden] { display: none }` and "hidden" buttons stay on screen. */
+[hidden] { display: none !important; }
+
+/* min-height, not height: `height: 100%` pins <body> to the viewport, so a
+   `position: sticky` child (the header, the dashboard sidebar) has no room
+   to stick inside and scrolls away with the page. */
+html, body { min-height: 100%; }
+
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  /* No overflow-x here. Setting it makes <body> a scroll container, which
+     silently kills `position: sticky` on the header and the dashboard
+     sidebar. Overflowing decoration is clipped at its own container. */
+}
+
+/* Ambient bloom. Two slow-drifting radial gradients behind everything,
+   which is what makes the glass read as glass instead of grey boxes. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -30% -10% auto -10%;
+  height: 90vh;
+  z-index: -2;
+  background:
+    radial-gradient(60% 55% at 18% 12%, rgba(91, 140, 255, 0.20), transparent 70%),
+    radial-gradient(50% 50% at 82% 8%, rgba(157, 107, 255, 0.16), transparent 70%);
+  filter: blur(30px);
+  pointer-events: none;
+  contain: strict;
+  will-change: transform;
+  animation: drift 26s var(--ease) infinite alternate;
+  translate: var(--bloom-x, 0) var(--bloom-y, 0);
+  transition: translate 0.8s var(--ease);
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  contain: strict;
+  will-change: transform;
+  /* Fine grain stops the large gradients from banding on 8-bit panels. */
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@keyframes drift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(-4%, 3%, 0) scale(1.12); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before { animation: none; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* --- typography --------------------------------------------------------- */
+
+h1, h2, h3, h4 {
+  margin: 0 0 0.5em;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+h1 { font-size: clamp(1.9rem, 4vw, 2.9rem); }
+h2 { font-size: clamp(1.4rem, 2.6vw, 1.9rem); }
+h3 { font-size: 1.15rem; }
+
+p { margin: 0 0 1em; color: var(--text-dim); }
+
+a { color: var(--accent); text-decoration: none; transition: color 0.18s var(--ease); }
+a:hover { color: var(--text); }
+
+code, .mono { font-family: var(--mono); font-size: 0.86em; }
+
+.muted { color: var(--text-dim); }
+.faint { color: var(--text-faint); }
+.tiny  { font-size: 0.78rem; }
+.right { text-align: right; }
+.center { text-align: center; }
+.nowrap { white-space: nowrap; }
+
+.gradient-text {
+  background: linear-gradient(120deg, var(--text) 10%, var(--accent) 55%, var(--accent-2) 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* --- layout ------------------------------------------------------------- */
+
+.wrap { width: min(1240px, 100% - 32px); margin-inline: auto; }
+.wrap-narrow { width: min(720px, 100% - 32px); margin-inline: auto; }
+
+.stack > * + * { margin-top: var(--space); }
+.row { display: flex; gap: 12px; align-items: center; }
+.row-between { display: flex; gap: 12px; align-items: center; justify-content: space-between; }
+.row-wrap { flex-wrap: wrap; }
+.grow { flex: 1 1 auto; min-width: 0; }
+.spacer { flex: 1 1 auto; }
+
+.grid { display: grid; gap: 18px; }
+/* min() on the track floor: without it a 300px minimum overflows a 390px
+   phone once the page gutter is subtracted. */
+.grid-2 { grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); }
+.grid-3 { grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); }
+.grid-4 { grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr)); }
+
+/* Two-column page layouts that must collapse on small screens. Use this
+   instead of an inline grid-template-columns, which no media query can undo. */
+.split { display: grid; gap: 20px; align-items: start; }
+.split-hero { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); align-items: center; gap: 44px; }
+.split-wide { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); }
+.split-even { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.split-aside { grid-template-columns: minmax(0, 1fr) 320px; }
+
+section { padding-block: clamp(36px, 7vw, 76px); }
+
+/* --- glass surfaces ----------------------------------------------------- */
+
+.glass {
+  background: var(--glass-1);
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius);
+}
+
+.card {
+  composes: glass;
+  position: relative;
+  background: var(--glass-1);
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  /* transform and opacity are compositor-only; background/border repaint,
+     so they get a shorter window to keep hover feeling immediate. */
+  transition: transform 0.26s var(--ease), border-color 0.18s var(--ease),
+              background 0.18s var(--ease);
+}
+
+/* Top edge highlight: the single detail that sells the glass illusion. */
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.28), transparent);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.card-hover {
+  /* Hint the compositor only for the properties that actually animate.
+     A blanket `will-change` on every card pins a layer per card and is what
+     made long lists feel heavy. */
+  will-change: transform;
+}
+.card-hover:hover {
+  transform: translateY(-3px);
+  border-color: var(--stroke-strong);
+  background: var(--glass-2);
+}
+
+.card-pad-lg { padding: 28px; }
+.card-flush { padding: 0; overflow: hidden; }
+
+/* --- buttons ------------------------------------------------------------ */
+
+.btn {
+  --btn-bg: var(--glass-2);
+  --btn-fg: var(--text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--stroke);
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  font: inherit;
+  font-weight: 560;
+  font-size: 0.92rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.16s var(--ease), background 0.2s var(--ease),
+              border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+.btn:hover { background: var(--glass-3); border-color: var(--stroke-strong); color: var(--text); }
+.btn:active { transform: scale(0.975); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn[disabled] { opacity: 0.45; pointer-events: none; }
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 6px 26px var(--accent-glow);
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  filter: brightness(1.1);
+  box-shadow: 0 10px 34px var(--accent-glow);
+}
+
+.btn-danger { color: var(--danger); border-color: rgba(255, 90, 110, 0.3); }
+.btn-danger:hover { background: rgba(255, 90, 110, 0.14); }
+.btn-ok { color: var(--ok); border-color: rgba(53, 208, 165, 0.3); }
+.btn-ok:hover { background: rgba(53, 208, 165, 0.14); }
+.btn-ghost { background: transparent; border-color: transparent; }
+.btn-ghost:hover { background: var(--glass-2); }
+.btn-sm { padding: 6px 12px; font-size: 0.82rem; }
+.btn-lg { padding: 14px 28px; font-size: 1rem; }
+.btn-block { width: 100%; }
+.btn-icon { padding: 9px; border-radius: 50%; aspect-ratio: 1; }
+
+/* --- forms -------------------------------------------------------------- */
+
+.field { display: block; margin-bottom: 16px; }
+.field-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.82rem;
+  font-weight: 560;
+  color: var(--text-dim);
+  letter-spacing: 0.01em;
+}
+
+.field-input, input[type="text"], input[type="email"], input[type="password"],
+input[type="number"], input[type="date"], input[type="search"], input[type="file"],
+select, textarea {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--stroke);
+  background: var(--glass-1);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.93rem;
+  transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease),
+              background 0.2s var(--ease);
+}
+.field-input:focus, input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--glass-2);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+.field-input::placeholder, textarea::placeholder { color: var(--text-faint); }
+textarea { resize: vertical; min-height: 78px; }
+select option { background: #0b0c12; color: var(--text); }
+
+input[type="file"] { padding: 10px; cursor: pointer; }
+input[type="file"]::file-selector-button {
+  margin-right: 12px;
+  padding: 7px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--stroke);
+  background: var(--glass-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.field-error { color: var(--danger); font-size: 0.82rem; margin-top: 5px; }
+.field-help { color: var(--text-faint); font-size: 0.8rem; margin-top: 5px; }
+
+.checkbox-row { display: flex; align-items: center; gap: 9px; }
+.checkbox-row input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--accent); }
+
+/* --- chips, badges, pills ----------------------------------------------- */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--stroke);
+  background: var(--glass-2);
+  font-size: 0.76rem;
+  font-weight: 560;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.chip::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 9px currentColor;
+}
+.chip-plain::before { display: none; }
+
+.chip-low, .sev-low { color: var(--low); border-color: rgba(53, 208, 165, 0.28); background: rgba(53, 208, 165, 0.10); }
+.chip-medium, .sev-medium { color: var(--medium); border-color: rgba(245, 184, 61, 0.28); background: rgba(245, 184, 61, 0.10); }
+.chip-high, .sev-high { color: var(--high); border-color: rgba(255, 90, 110, 0.28); background: rgba(255, 90, 110, 0.10); }
+
+.chip-submitted { color: var(--text-dim); }
+.chip-verified, .chip-pothole_detected { color: var(--info); border-color: rgba(91, 140, 255, 0.3); background: rgba(91, 140, 255, 0.10); }
+.chip-assigned { color: var(--accent-2); border-color: rgba(157, 107, 255, 0.3); background: rgba(157, 107, 255, 0.10); }
+.chip-in_progress, .chip-needs_review { color: var(--warn); border-color: rgba(245, 184, 61, 0.3); background: rgba(245, 184, 61, 0.10); }
+.chip-fixed { color: var(--ok); border-color: rgba(53, 208, 165, 0.3); background: rgba(53, 208, 165, 0.10); }
+.chip-rejected, .chip-unknown { color: var(--danger); border-color: rgba(255, 90, 110, 0.28); background: rgba(255, 90, 110, 0.10); }
+.chip-duplicate, .chip-intact { color: var(--text-faint); }
+
+.badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+/* --- header ------------------------------------------------------------- */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.55);
+  border-bottom: 1px solid var(--stroke);
+  backdrop-filter: blur(var(--blur-lg)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--blur-lg)) saturate(160%);
+}
+:root[data-theme="light"] .site-header { background: rgba(255, 255, 255, 0.7); }
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 1.04rem;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.brand-mark {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 4px 18px var(--accent-glow);
+  font-size: 15px;
+}
+
+.nav { display: flex; align-items: center; gap: 4px; }
+.nav a {
+  padding: 8px 13px;
+  border-radius: var(--radius-pill);
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  font-weight: 520;
+  transition: background 0.2s var(--ease), color 0.2s var(--ease);
+}
+.nav a:hover { background: var(--glass-2); color: var(--text); }
+.nav a.active { background: var(--accent-soft); color: var(--text); }
+
+.avatar {
+  width: 32px; height: 32px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #fff;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.nav-toggle { display: none; }
+
+/* --- messages ----------------------------------------------------------- */
+
+.messages {
+  position: fixed;
+  top: calc(var(--header-h) + 14px);
+  right: 18px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: min(400px, calc(100vw - 36px));
+}
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 13px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--stroke-strong);
+  background: rgba(10, 10, 14, 0.82);
+  backdrop-filter: blur(var(--blur-lg)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--blur-lg)) saturate(160%);
+  box-shadow: var(--shadow-lg);
+  font-size: 0.9rem;
+  animation: toast-in 0.4s var(--ease);
+}
+:root[data-theme="light"] .toast { background: rgba(255, 255, 255, 0.92); }
+.toast-success { border-left: 3px solid var(--ok); }
+.toast-error   { border-left: 3px solid var(--danger); }
+.toast-warning { border-left: 3px solid var(--warn); }
+.toast-info    { border-left: 3px solid var(--info); }
+.toast button {
+  background: none; border: 0; color: var(--text-faint);
+  cursor: pointer; font-size: 1.1rem; line-height: 1; padding: 0;
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(24px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* --- tables ------------------------------------------------------------- */
+
+.table-wrap { overflow-x: auto; border-radius: var(--radius); }
+table { width: 100%; border-collapse: collapse; font-size: 0.89rem; }
+thead th {
+  position: sticky; top: 0;
+  padding: 11px 14px;
+  text-align: left;
+  font-size: 0.74rem;
+  font-weight: 620;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-faint);
+  background: rgba(8, 8, 12, 0.9);
+  backdrop-filter: blur(var(--blur));
+  -webkit-backdrop-filter: blur(var(--blur));
+  border-bottom: 1px solid var(--stroke);
+  white-space: nowrap;
+}
+:root[data-theme="light"] thead th { background: rgba(255, 255, 255, 0.92); }
+tbody td { padding: 12px 14px; border-bottom: 1px solid var(--stroke); vertical-align: middle; }
+tbody tr { transition: background 0.16s var(--ease); }
+tbody tr:hover { background: var(--glass-1); }
+tbody tr:last-child td { border-bottom: 0; }
+
+.thumb-xs {
+  width: 46px; height: 46px;
+  object-fit: cover;
+  border-radius: 9px;
+  border: 1px solid var(--stroke);
+  background: var(--glass-2);
+}
+
+/* --- pagination --------------------------------------------------------- */
+
+.pagination { display: flex; gap: 6px; justify-content: center; align-items: center; margin-top: 22px; flex-wrap: wrap; }
+.pagination a, .pagination span {
+  min-width: 36px; padding: 7px 11px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--stroke);
+  background: var(--glass-1);
+  color: var(--text-dim);
+  font-size: 0.86rem;
+  text-align: center;
+}
+.pagination a:hover { background: var(--glass-3); color: var(--text); }
+.pagination .current { background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
+
+/* --- misc --------------------------------------------------------------- */
+
+.divider { height: 1px; background: var(--stroke); border: 0; margin: 22px 0; }
+
+.empty {
+  padding: 56px 24px;
+  text-align: center;
+  color: var(--text-faint);
+  border: 1px dashed var(--stroke);
+  border-radius: var(--radius);
+}
+.empty-icon { font-size: 2.4rem; opacity: 0.4; display: block; margin-bottom: 10px; }
+
+.skeleton {
+  background: linear-gradient(90deg, var(--glass-1), var(--glass-3), var(--glass-1));
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: var(--radius-sm);
+}
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+.site-footer {
+  margin-top: 64px;
+  padding: 30px 0;
+  border-top: 1px solid var(--stroke);
+  color: var(--text-faint);
+  font-size: 0.85rem;
+}
+
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--glass-3);
+  border-radius: var(--radius-pill);
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--stroke-strong); background-clip: content-box; }
+
+/* --- responsive --------------------------------------------------------- */
+
+@media (max-width: 960px) {
+  .split-hero, .split-wide, .split-even, .split-aside { grid-template-columns: minmax(0, 1fr); }
+  .split-hero { gap: 28px; }
+}
+
+@media (max-width: 860px) {
+  .nav-toggle {
+    display: inline-grid;
+    place-items: center;
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    border: 1px solid var(--stroke);
+    background: var(--glass-2);
+    color: var(--text);
+    cursor: pointer;
+  }
+  .nav {
+    position: fixed;
+    inset: var(--header-h) 0 auto 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    padding: 14px;
+    background: rgba(0, 0, 0, 0.92);
+    border-bottom: 1px solid var(--stroke);
+    backdrop-filter: blur(var(--blur-lg));
+    -webkit-backdrop-filter: blur(var(--blur-lg));
+    transform: translateY(-12px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.22s var(--ease), transform 0.22s var(--ease);
+  }
+  :root[data-theme="light"] .nav { background: rgba(255, 255, 255, 0.96); }
+  .nav.open { opacity: 1; transform: none; pointer-events: auto; }
+  .nav a { padding: 12px 14px; border-radius: var(--radius-sm); }
+  .messages { left: 18px; right: 18px; max-width: none; }
+  section { padding-block: 34px; }
+}
+
+/* =======================================================================
+   Motion
+   Everything here is opt-in per element and disabled wholesale under
+   prefers-reduced-motion (the guard lives with the other media queries).
+   ======================================================================= */
+
+/* Scroll reveal. JS adds .is-in when the element enters the viewport; the
+   element is fully visible without JS, so nothing is hidden if it fails. */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.7s var(--ease), transform 0.7s var(--ease);
+  will-change: opacity, transform;
+}
+.reveal.is-in { opacity: 1; transform: none; }
+.no-js .reveal { opacity: 1; transform: none; }
+
+/* Stagger children by index, set as --i by the JS. */
+.reveal[style*="--i"] { transition-delay: calc(var(--i) * 80ms); }
+
+/* Page entrance for the hero block. */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(26px); }
+  to   { opacity: 1; transform: none; }
+}
+.animate-rise { animation: rise-in 0.85s var(--ease) both; }
+.animate-rise-1 { animation-delay: 0.06s; }
+.animate-rise-2 { animation-delay: 0.14s; }
+.animate-rise-3 { animation-delay: 0.22s; }
+
+/* The accent sweep across the primary button on hover. */
+.btn-primary {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.btn-primary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(100deg, transparent 20%, rgba(255,255,255,.28), transparent 80%);
+  transform: translateX(-120%);
+  transition: transform 0.7s var(--ease);
+}
+.btn-primary:hover::after { transform: translateX(120%); }
+
+/* Cards lift and their top highlight brightens. */
+.card-hover::before { transition: opacity 0.35s var(--ease); opacity: 0.65; }
+.card-hover:hover::before { opacity: 1; }
+
+/* Gradient text slowly drifts, so the hero is never quite static. */
+/* Static gradient. Animating background-position through
+   `background-clip: text` repaints every glyph each frame, which showed up
+   as sustained jank on the landing page for an effect nobody noticed. */
+.gradient-text { background-size: 130% 100%; }
+
+/* Counting numbers. JS animates the value; this only smooths the glyph swap. */
+.kpi-value, .count-up { font-variant-numeric: tabular-nums; }
+
+/* Nav underline that grows from the centre. */
+.nav a { position: relative; }
+.nav a::after {
+  content: "";
+  position: absolute;
+  left: 50%; right: 50%; bottom: 3px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  transition: left 0.28s var(--ease), right 0.28s var(--ease);
+}
+.nav a:hover::after { left: 14px; right: 14px; }
+.nav a.active::after { left: 14px; right: 14px; }
+
+/* Sidebar links slide a touch on hover. */
+.side-link { transition: background 0.18s var(--ease), color 0.18s var(--ease),
+             transform 0.18s var(--ease); }
+.side-link:hover { transform: translateX(2px); }
+
+/* Table rows warm up rather than snapping. */
+tbody tr { transition: background 0.22s var(--ease); }
+
+/* Chips gently pop in when a page renders a list of them. */
+@keyframes chip-in {
+  from { opacity: 0; transform: scale(0.86); }
+  to   { opacity: 1; transform: none; }
+}
+.chip { animation: chip-in 0.4s var(--ease) both; }
+
+/* KPI tiles: the corner bloom breathes. */
+.kpi::after { animation: bloom 7s ease-in-out infinite alternate; }
+@keyframes bloom {
+  from { transform: scale(1); opacity: 0.42; }
+  to   { transform: scale(1.22); opacity: 0.62; }
+}
+
+/* Focus ring animates in so keyboard navigation feels deliberate. */
+:focus-visible { transition: outline-offset 0.12s var(--ease); }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1 !important; transform: none !important; }
+  .gradient-text, .kpi::after, .chip, .animate-rise { animation: none !important; }
+  .btn-primary::after { display: none; }
+}

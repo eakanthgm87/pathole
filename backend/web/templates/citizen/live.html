@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Live detection — {{ SITE_NAME }}{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{% static 'css/map.css' %}">{% endblock %}
+
+{% block content %}
+<section class="wrap">
+  <div class="row-between row-wrap" style="margin-bottom:20px">
+    <div>
+      <h1 style="margin-bottom:4px">Live detection</h1>
+      <p class="muted" style="margin:0">
+        Point a camera at the road. Detection runs continuously; capture anything worth reporting.
+      </p>
+    </div>
+    <a class="btn" href="{% url 'web:report_new' %}">Single photo instead →</a>
+  </div>
+
+  <div data-live-root class="split split-aside">
+
+    <div>
+      <div class="live-stage">
+        <video data-live-video playsinline muted></video>
+        <canvas data-live-overlay></canvas>
+
+        <div class="live-hud">
+          <span class="hud-pill hud-live" data-hud-state>Stopped</span>
+          <span class="hud-pill" data-hud-count>0 detected</span>
+          <span class="hud-pill" data-hud-severity>low</span>
+          <span class="hud-pill" data-hud-fps>0 fps</span>
+          <span class="hud-pill" data-hud-latency>0 ms</span>
+          <span class="hud-pill" data-live-gps hidden></span>
+        </div>
+
+        <div class="live-controls">
+          <button class="btn btn-sm btn-primary" data-live-start>Start camera</button>
+          <button class="btn btn-sm btn-danger" data-live-stop hidden>Stop</button>
+          <button class="btn btn-sm btn-ok" data-live-capture hidden>Save this frame</button>
+          <button class="btn btn-sm" data-live-switch title="Switch camera">⟲</button>
+        </div>
+
+        <div class="live-placeholder" data-live-placeholder>
+          <div style="font-size:2.6rem">🎥</div>
+          <div>
+            <strong>Camera is off</strong>
+            <p class="tiny faint" data-live-message style="margin:6px 0 0">
+              Start the camera, or load a dashcam clip to analyse it frame by frame.
+            </p>
+          </div>
+          <div class="row" style="gap:10px">
+            <button class="btn btn-primary" data-live-start-proxy onclick="document.querySelector('[data-live-start]').click()">Start camera</button>
+            <label class="btn">
+              Load a video
+              <input type="file" accept="video/*" data-live-file hidden>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" data-live-saved hidden style="margin-top:14px;border-color:var(--ok)"></div>
+    </div>
+
+    <aside class="stack">
+      <div class="card">
+        <h3 style="margin-top:0">How it works</h3>
+        <p class="tiny">
+          Frames are sent to the server one at a time and the next is only grabbed once the
+          previous result lands, so the stream paces itself to whatever the model can sustain.
+        </p>
+        <p class="tiny" style="margin:0">
+          Nothing is stored unless you press <strong>Save this frame</strong>. Saved captures
+          become ordinary reports and need a GPS fix.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-top:0">Box colours</h3>
+        <div class="legend" style="flex-direction:column;gap:9px">
+          <span><i style="color:var(--high);background:var(--high)"></i> High confidence (≥60%)</span>
+          <span><i style="color:var(--medium);background:var(--medium)"></i> Medium (35–60%)</span>
+          <span><i style="color:var(--info);background:var(--info)"></i> Low (below 35%)</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-top:0">Getting good results</h3>
+        <ul class="tiny muted" style="margin:0;padding-left:18px;line-height:1.9">
+          <li>Hold the camera at a shallow angle, not straight down</li>
+          <li>Daylight helps a lot; the model is weak at dusk</li>
+          <li>Water-filled holes are the hardest case</li>
+          <li>On a phone, use the rear camera</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}<script type="module" src="{% static 'js/live.js' %}"></script>{% endblock %}

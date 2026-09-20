@@ -1,0 +1,73 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+{% block title %}Review queue — {{ SITE_NAME }}{% endblock %}
+
+{% block dash_content %}
+<div class="page-head">
+  <div>
+    <h1>Review queue</h1>
+    <p class="muted">{{ remaining }} report{{ remaining|pluralize }} the model was unsure about.</p>
+  </div>
+  <div class="tiny faint">
+    <span class="kbd">C</span> confirm · <span class="kbd">R</span> reject · <span class="kbd">S</span> skip
+  </div>
+</div>
+
+{% if current %}
+<div class="review-stage" data-review-stage>
+  <div>
+    <img class="review-img" src="{{ current.image.url }}" alt="Report awaiting review">
+  </div>
+
+  <aside class="stack">
+    <div class="card">
+      <h3 style="margin-top:0">Is this a pothole?</h3>
+      <dl class="meta-list">
+        <dt>Confidence</dt><dd class="mono">{{ current.confidence|floatformat:3 }}</dd>
+        <dt>Severity score</dt><dd class="mono">{{ current.severity_score }}</dd>
+        <dt>Boxes</dt><dd>{{ current.detections|length }}</dd>
+        <dt>Source</dt><dd class="tiny">{{ current.get_source_display }}</dd>
+      </dl>
+      {% if current.address %}<p class="tiny faint" style="margin-top:10px">{{ current.address }}</p>{% endif %}
+      {% if current.notes %}<p class="tiny" style="margin-top:8px">{{ current.notes }}</p>{% endif %}
+
+      <form method="post" action="{% url 'web:dashboard_review_decide' current.id %}" style="margin-top:16px">
+        {% csrf_token %}
+        <button class="btn btn-ok btn-block btn-lg" name="decision" value="confirm"
+                data-review-confirm type="submit">Yes, it is a pothole</button>
+      </form>
+
+      <form method="post" action="{% url 'web:dashboard_review_decide' current.id %}" style="margin-top:8px">
+        {% csrf_token %}
+        <input type="hidden" name="decision" value="reject">
+        <input type="hidden" name="note" value="Not a pothole (review queue)">
+        <button class="btn btn-danger btn-block" data-review-reject type="submit">No, reject it</button>
+      </form>
+
+      <a class="btn btn-ghost btn-block" style="margin-top:8px"
+         href="{% url 'web:dashboard_report' current.id %}" data-review-skip>Open full record</a>
+    </div>
+
+    {% if queue|length > 1 %}
+      <div class="card">
+        <h3 style="margin-top:0">Up next</h3>
+        {% for r in queue|slice:"1:6" %}
+          <div class="row" style="gap:10px;padding:7px 0">
+            {% if r.thumbnail %}<img class="thumb-xs" src="{{ r.thumbnail.url }}" alt="">{% endif %}
+            <div class="tiny faint mono">{{ r.confidence|floatformat:2 }}</div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </aside>
+</div>
+{% else %}
+  <div class="empty">
+    <span class="empty-icon">✨</span>
+    <p>Queue is clear. Nothing needs a second opinion.</p>
+    <a class="btn btn-primary" href="{% url 'web:dashboard_overview' %}">Back to overview</a>
+  </div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}<script src="{% static 'js/review.js' %}"></script>{% endblock %}

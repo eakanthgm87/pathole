@@ -1,0 +1,15 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}My tasks — {{ SITE_NAME }}{% endblock %}
+{% block dash_content %}
+<div class="page-head">
+  <div><h1>My tasks</h1><p class="muted">Reports assigned to you and still open.</p></div>
+</div>
+
+{% if tasks %}
+  <div class="grid grid-3" data-reveal-group>
+    {% for report in tasks %}{% include "partials/report_card.html" %}{% endfor %}
+  </div>
+{% else %}
+  <div class="empty"><span class="empty-icon">✓</span><p>Nothing assigned to you. Enjoy it.</p></div>
+{% endif %}
+{% endblock %}

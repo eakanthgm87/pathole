@@ -1,0 +1,24 @@
+<article class="card card-hover card-flush">
+  <a href="{{ report.get_absolute_url }}" style="display:block">
+    {% if report.thumbnail %}
+      <img src="{{ report.thumbnail.url }}" alt="" loading="lazy"
+           style="width:100%;height:172px;object-fit:cover;display:block">
+    {% else %}
+      <div style="height:172px;display:grid;place-items:center;background:var(--glass-2);font-size:2rem">🕳</div>
+    {% endif %}
+  </a>
+  <div style="padding:14px 16px 16px">
+    <div class="row row-wrap" style="gap:6px;margin-bottom:8px">
+      <span class="chip chip-{{ report.severity }}">{{ report.get_severity_display }}</span>
+      <span class="chip chip-{{ report.workflow_status }} chip-plain">{{ report.get_workflow_status_display }}</span>
+      {% if report.report_count > 1 %}<span class="chip chip-plain">×{{ report.report_count }}</span>{% endif %}
+    </div>
+    <div class="tiny muted" style="min-height:2.4em">
+      {{ report.address|default:"Location pending"|truncatechars:72 }}
+    </div>
+    <div class="row-between tiny faint" style="margin-top:10px">
+      <span>{{ report.created_at|date:"j M Y, H:i" }}</span>
+      <span class="mono">{{ report.confidence|floatformat:2 }}</span>
+    </div>
+  </div>
+</article>

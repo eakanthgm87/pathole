@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Analysis result — {{ SITE_NAME }}{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">{% endblock %}
+
+{% block content %}
+{{ detections_json|json_script:"detections-data" }}
+<section class="wrap-narrow">
+  <div class="center" style="margin-bottom:24px">
+    {% if report.detection_status == "pothole_detected" %}
+      <div style="font-size:2.6rem">✅</div>
+      <h1>Pothole confirmed</h1>
+      <p>It is on the public map and an officer will pick it up.</p>
+    {% elif report.detection_status == "needs_review" %}
+      <div style="font-size:2.6rem">🔍</div>
+      <h1>Needs a human eye</h1>
+      <p>The detector is unsure, so an officer will review this before it goes public.</p>
+    {% elif report.detection_status == "intact" %}
+      <div style="font-size:2.6rem">🛣️</div>
+      <h1>No pothole found</h1>
+      <p>We saved your report, but the road looks intact to the model. An officer can still review it.</p>
+    {% else %}
+      <div style="font-size:2.6rem">⚠️</div>
+      <h1>Analysis failed</h1>
+      <p>Your report was saved and will be looked at manually.</p>
+    {% endif %}
+  </div>
+
+  <div class="card card-flush">
+    <div class="detect-canvas-wrap">
+      <img data-result-image src="{{ report.image.url }}" alt="Reported pothole" style="display:none">
+      <canvas data-result-canvas></canvas>
+    </div>
+    <div style="padding:20px">
+      <dl class="meta-list">
+        <dt>Severity</dt><dd><span class="chip chip-{{ report.severity }}">{{ report.get_severity_display }}</span></dd>
+        <dt>Severity score</dt><dd>{{ report.severity_score }}</dd>
+        <dt>Confidence</dt><dd>{{ report.confidence|floatformat:3 }}</dd>
+        <dt>Detections</dt><dd>{{ report.detections|length }}</dd>
+        <dt>Status</dt><dd><span class="chip chip-{{ report.workflow_status }} chip-plain">{{ report.get_workflow_status_display }}</span></dd>
+        <dt>Location</dt><dd class="mono tiny">{{ report.latitude|floatformat:5 }}, {{ report.longitude|floatformat:5 }}</dd>
+        {% if report.address %}<dt>Address</dt><dd class="tiny">{{ report.address|truncatechars:60 }}</dd>{% endif %}
+        {% if report.model_version %}<dt>Model</dt><dd class="tiny">{{ report.model_version.name }}</dd>{% endif %}
+      </dl>
+
+      {% if report.duplicate_of %}
+        <div class="card" style="margin-top:16px;border-color:var(--warn)">
+          <strong>Already reported.</strong>
+          <p class="tiny" style="margin:6px 0 0">
+            This matches an existing report nearby, so it was merged into it.
+            <a href="{{ report.duplicate_of.get_absolute_url }}">See the original</a>.
+          </p>
+        </div>
+      {% endif %}
+
+      <div class="row row-wrap" style="gap:10px;margin-top:20px">
+        <a class="btn btn-primary" href="{{ report.get_absolute_url }}">View report</a>
+        <a class="btn" href="{% url 'web:report_new' %}">Report another</a>
+        <a class="btn btn-ghost" href="{% url 'web:my_reports' %}">My reports</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}<script type="module" src="{% static 'js/upload.js' %}"></script>{% endblock %}

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<link rel="stylesheet" href="ol.css">
+<style>
+  :root {
+    --low: #35d0a5;
+    --medium: #f5b83d;
+    --high: #ff5a6e;
+    --accent: #5b8cff;
+  }
+  html, body, #map { margin: 0; height: 100%; width: 100%; background: #000; }
+  * { -webkit-tap-highlight-color: transparent; }
+
+  /* Esri's dark canvas is already near-black; a small knock-back keeps the
+     basemap behind the markers. Matches the website exactly. */
+  /* Matches the website: Esri's canvas is mid-grey and needs seating
+     against the black app background. */
+  .ol-layer canvas { filter: brightness(0.52) contrast(1.15) saturate(0.8);
+                     transition: opacity .35s ease; }
+
+  .ol-control button {
+    width: 38px; height: 38px; margin: 3px;
+    border-radius: 11px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(12,12,18,.78);
+    color: #f4f5f7; font-size: 19px; font-weight: 600;
+    backdrop-filter: blur(16px);
+  }
+  .ol-zoom { top: 10px; left: 10px; }
+  .ol-attribution {
+    right: 6px; bottom: 6px; max-width: 70%;
+    background: rgba(0,0,0,.55); border-radius: 8px;
+  }
+  .ol-attribution ul { color: #8b90a0; font-size: 9px; text-shadow: none; padding: 2px 6px; }
+  .ol-attribution a { color: #a8adb8; }
+  .ol-attribution button { width: 20px; height: 20px; font-size: 11px; }
+
+  /* Pulse ring under the user's location, same idiom as the web live HUD. */
+  @keyframes ping {
+    0%   { transform: scale(.6); opacity: .85; }
+    100% { transform: scale(2.4); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<script src="ol.js"></script>
+<script>
+/* OpenLayers inside a WebView, driven from Kotlin.
+ *
+ * Kotlin calls window.PW.setReports(json) / setCenter(lat,lng,zoom) etc.
+ * The page calls back through the injected `Android` bridge. Everything is
+ * loaded from file:///android_asset so the map works with no network beyond
+ * the tiles themselves. */
+
+const ESRI = 'https://services.arcgisonline.com/ArcGIS/rest/services/Canvas';
+const ATTRIB = 'Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap contributors';
+
+function esri(service, attribute) {
+  return new ol.source.XYZ({
+    // Esri addresses tiles {z}/{row}/{col}: y before x, not the usual XYZ order.
+    url: service + '/MapServer/tile/{z}/{y}/{x}',
+    attributions: attribute ? ATTRIB : undefined,
+    maxZoom: 16,
+    crossOrigin: 'anonymous',
+    transition: 300,
+  });
+}
+
+const SEV = { low: '#35d0a5', medium: '#f5b83d', high: '#ff5a6e' };
+const sevColor = (s) => SEV[s] || '#5b8cff';
+
+function rgba(hex, a) {
+  const n = parseInt(hex.slice(1), 16);
+  return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+}
+
+const reportSource = new ol.source.Vector();
+const cluster = new ol.source.Cluster({ distance: 44, source: reportSource });
+
+function styleFor(feature) {
+  const members = feature.get('features') || [];
+  if (members.length === 1) {
+    const f = members[0];
+    const color = sevColor(f.get('severity'));
+    const fixed = f.get('status') === 'fixed';
+    return new ol.style.Style({
+      image: new ol.style.Circle({
+        radius: 8,
+        fill: new ol.style.Fill({ color: fixed ? 'rgba(130,140,150,.6)' : color }),
+        stroke: new ol.style.Stroke({ color: 'rgba(255,255,255,.9)', width: 2 }),
+      }),
+    });
+  }
+  const worst = members.some((f) => f.get('severity') === 'high') ? 'high'
+    : members.some((f) => f.get('severity') === 'medium') ? 'medium' : 'low';
+  const color = sevColor(worst);
+  const r = Math.min(28, 14 + Math.log2(members.length + 1) * 3.6);
+  return new ol.style.Style({
+    image: new ol.style.Circle({
+      radius: r,
+      fill: new ol.style.Fill({ color: rgba(color, 0.25) }),
+      stroke: new ol.style.Stroke({ color: color, width: 2.4 }),
+    }),
+    text: new ol.style.Text({
+      text: String(members.length),
+      font: '600 13px -apple-system, Roboto, sans-serif',
+      fill: new ol.style.Fill({ color: '#fff' }),
+    }),
+  });
+}
+
+const pointLayer = new ol.layer.Vector({ source: cluster, style: styleFor, zIndex: 5 });
+
+const meSource = new ol.source.Vector();
+const meLayer = new ol.layer.Vector({
+  source: meSource,
+  zIndex: 9,
+  style: (f) => f.get('kind') === 'accuracy'
+    ? new ol.style.Style({
+        fill: new ol.style.Fill({ color: 'rgba(91,140,255,.12)' }),
+        stroke: new ol.style.Stroke({ color: 'rgba(91,140,255,.45)', width: 1 }),
+      })
+    : new ol.style.Style({
+        image: new ol.style.Circle({
+          radius: 7,
+          fill: new ol.style.Fill({ color: '#5b8cff' }),
+          stroke: new ol.style.Stroke({ color: '#fff', width: 2.5 }),
+        }),
+      }),
+});
+
+const pickSource = new ol.source.Vector();
+const pickLayer = new ol.layer.Vector({
+  source: pickSource,
+  zIndex: 10,
+  style: new ol.style.Style({
+    image: new ol.style.Circle({
+      radius: 10,
+      fill: new ol.style.Fill({ color: 'rgba(91,140,255,.92)' }),
+      stroke: new ol.style.Stroke({ color: '#fff', width: 3 }),
+    }),
+  }),
+});
+
+const map = new ol.Map({
+  target: 'map',
+  layers: [
+    new ol.layer.Tile({ source: esri(ESRI + '/World_Dark_Gray_Base', true), zIndex: 0 }),
+    new ol.layer.Tile({ source: esri(ESRI + '/World_Dark_Gray_Reference', false), zIndex: 7, opacity: .85 }),
+    pointLayer, meLayer, pickLayer,
+  ],
+  view: new ol.View({ center: ol.proj.fromLonLat([77.5946, 12.9716]), zoom: 13, maxZoom: 19 }),
+  controls: ol.control.defaults.defaults({ rotate: false, attributionOptions: { collapsible: true } }),
+});
+
+let pickMode = false;
+
+map.on('click', (evt) => {
+  if (pickMode) {
+    const lonLat = ol.proj.toLonLat(evt.coordinate);
+    pickSource.clear();
+    pickSource.addFeature(new ol.Feature({ geometry: new ol.geom.Point(evt.coordinate) }));
+    if (window.Android && Android.onPick) Android.onPick(lonLat[1], lonLat[0]);
+    return;
+  }
+  const hit = map.forEachFeatureAtPixel(evt.pixel, (f) => f);
+  if (!hit) return;
+  const members = hit.get('features') || [];
+  if (members.length > 1) {
+    const extent = ol.extent.createEmpty();
+    members.forEach((m) => ol.extent.extend(extent, m.getGeometry().getExtent()));
+    map.getView().fit(extent, { padding: [70, 70, 70, 70], duration: 350, maxZoom: 18 });
+    return;
+  }
+  const f = members[0];
+  if (f && window.Android && Android.onMarker) {
+    Android.onMarker(f.get('id') || '');
+  }
+});
+
+// --- API the Kotlin side calls --------------------------------------------
+window.PW = {
+  setReports(json) {
+    const data = typeof json === 'string' ? JSON.parse(json) : json;
+    reportSource.clear();
+    (data || []).forEach((r) => {
+      const feature = new ol.Feature({
+        geometry: new ol.geom.Point(ol.proj.fromLonLat([r.lng, r.lat])),
+      });
+      feature.set('id', r.id);
+      feature.set('severity', r.severity);
+      feature.set('status', r.status);
+      reportSource.addFeature(feature);
+    });
+  },
+
+  setCenter(lat, lng, zoom) {
+    map.getView().animate({
+      center: ol.proj.fromLonLat([lng, lat]),
+      zoom: zoom || map.getView().getZoom(),
+      duration: 500,
+    });
+  },
+
+  setMe(lat, lng, accuracy) {
+    const coord = ol.proj.fromLonLat([lng, lat]);
+    meSource.clear();
+    meSource.addFeature(new ol.Feature({ geometry: new ol.geom.Point(coord) }));
+    if (accuracy && accuracy > 0) {
+      const circle = new ol.Feature({ geometry: new ol.geom.Circle(coord, accuracy) });
+      circle.set('kind', 'accuracy');
+      meSource.addFeature(circle);
+    }
+  },
+
+  setPickMode(on) {
+    pickMode = !!on;
+    if (!on) pickSource.clear();
+  },
+
+  setPick(lat, lng) {
+    const coord = ol.proj.fromLonLat([lng, lat]);
+    pickSource.clear();
+    pickSource.addFeature(new ol.Feature({ geometry: new ol.geom.Point(coord) }));
+    map.getView().animate({ center: coord, zoom: 17, duration: 400 });
+  },
+
+  fitAll() {
+    if (reportSource.getFeatures().length > 1) {
+      map.getView().fit(reportSource.getExtent(), {
+        padding: [60, 60, 60, 60], maxZoom: 16, duration: 450,
+      });
+    }
+  },
+};
+
+if (window.Android && Android.onReady) Android.onReady();
+</script>
+</body>
+</html>

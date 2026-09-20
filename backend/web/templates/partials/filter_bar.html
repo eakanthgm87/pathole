@@ -1,0 +1,13 @@
+<form method="get" class="card filter-bar">
+  {% for field in form %}
+    <div class="field">
+      <label class="field-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+    </div>
+  {% endfor %}
+  <div class="actions">
+    <button class="btn btn-primary" type="submit">Apply</button>
+    <a class="btn" href="{{ request.path }}">Clear</a>
+    {% block filter_extra %}{% endblock %}
+  </div>
+</form>

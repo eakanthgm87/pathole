@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Not allowed{% endblock %}
+{% block content %}
+<section class="wrap-narrow center">
+  <div class="card card-pad-lg">
+    <div style="font-size:3rem">🔒</div>
+    <h1>Not your door</h1>
+    <p>You do not have permission to view this page. If you think that is wrong, ask an admin to check your role.</p>
+    <a class="btn btn-primary" href="{% url 'web:landing' %}">Back to safety</a>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,96 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+{% block title %}Model &amp; settings — {{ SITE_NAME }}{% endblock %}
+
+{% block dash_content %}
+<div class="page-head">
+  <div>
+    <h1>Model &amp; settings</h1>
+    <p class="muted">Which weights run, and where the thresholds sit.</p>
+  </div>
+</div>
+
+{{ histogram|json_script:"hist-data" }}
+
+<div class="split split-wide">
+  <div class="stack">
+    <div class="card card-flush">
+      <h3 style="padding:16px 18px 0;margin:0">Model versions</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>Weights</th><th>Conf.</th><th>Review</th><th>Size</th><th></th></tr></thead>
+          <tbody>
+            {% for v in versions %}
+              <tr>
+                <td>
+                  <strong>{{ v.name }}</strong>
+                  {% if v.is_active %}<span class="chip chip-fixed">active</span>{% endif %}
+                  {% if v.notes %}<div class="tiny faint">{{ v.notes|truncatechars:60 }}</div>{% endif %}
+                </td>
+                <td class="tiny mono">{{ v.file_path }}</td>
+                <td class="mono">{{ v.conf_threshold }}</td>
+                <td class="mono">{{ v.review_threshold }}</td>
+                <td class="mono tiny">{{ v.imgsz }}</td>
+                <td>
+                  {% if not v.is_active %}
+                    <form method="post">{% csrf_token %}
+                      <input type="hidden" name="action" value="activate">
+                      <input type="hidden" name="version_id" value="{{ v.id }}">
+                      <button class="btn btn-sm" type="submit">Activate</button>
+                    </form>
+                  {% endif %}
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="6" class="center faint" style="padding:26px">
+                No versions registered. Run <code>manage.py register_models</code>.
+              </td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card chart-card">
+      <h3>Confidence distribution</h3>
+      <p class="tiny faint">Where your reports actually land. Set thresholds against this, not against a default.</p>
+      <div class="chart-box chart-box-sm"><canvas data-chart="bar" data-chart-data="hist-data"></canvas></div>
+    </div>
+  </div>
+
+  <aside class="stack">
+    <div class="card">
+      <h3 style="margin-top:0">Thresholds</h3>
+      {% if active %}
+        <p class="tiny faint">Applies to <strong>{{ active.name }}</strong>.</p>
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="thresholds">
+          {% for field in threshold_form %}{% include "partials/form_field.html" %}{% endfor %}
+          <button class="btn btn-primary btn-block" type="submit">Save thresholds</button>
+        </form>
+      {% else %}
+        <p class="tiny">Activate a model version first.</p>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">Register a model</h3>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_model">
+        {% for field in model_form %}{% include "partials/form_field.html" %}{% endfor %}
+        <button class="btn btn-block" type="submit">Register</button>
+      </form>
+      <p class="tiny faint" style="margin-top:10px">
+        Put the .pt file in the repo's <code>weights/</code> directory and give its filename.
+      </p>
+    </div>
+  </aside>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{% static 'vendor/chartjs/chart.umd.js' %}"></script>
+  <script type="module" src="{% static 'js/charts.js' %}"></script>
+{% endblock %}

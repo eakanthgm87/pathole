@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Pothole map — {{ SITE_NAME }}{% endblock %}
+{% block styles %}
+  <link rel="stylesheet" href="{% static 'vendor/ol/ol.css' %}">
+  <link rel="stylesheet" href="{% static 'css/map.css' %}">
+{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block content %}
+{{ geojson|json_script:"map-data" }}
+{{ wards_geojson|json_script:"wards-data" }}
+
+<div style="position:relative">
+  <div id="map" class="map-shell map-dark map-full"
+       data-map data-geojson="map-data" data-wards="wards-data"
+       data-zoom="12"></div>
+
+  <div class="map-panel map-panel-tl">
+    <div class="map-search">
+      <input type="search" placeholder="Search a place" data-geosearch aria-label="Search a place">
+      <button class="btn btn-sm" data-locate title="Locate me">📍</button>
+    </div>
+    <ul class="geo-results" data-georesults></ul>
+  </div>
+
+  <div class="map-panel map-panel-tr">
+    <form method="get" class="stack" style="--space:12px">
+      <div>
+        <label class="field-label" for="{{ form.severity.id_for_label }}">Severity</label>
+        {{ form.severity }}
+      </div>
+      <div>
+        <label class="field-label" for="{{ form.status.id_for_label }}">Status</label>
+        {{ form.status }}
+      </div>
+      <div class="row" style="gap:8px">
+        <button class="btn btn-sm btn-primary grow" type="submit">Filter</button>
+        <a class="btn btn-sm" href="{% url 'web:map' %}">Reset</a>
+      </div>
+    </form>
+
+    <hr class="divider" style="margin:14px 0">
+
+    <div class="layer-toggle">
+      <label class="checkbox-row"><input type="checkbox" data-toggle-heat> Heatmap</label>
+      <label class="checkbox-row"><input type="checkbox" data-toggle-wards checked> Ward boundaries</label>
+    </div>
+
+    {% if geojson.truncated %}
+      <div class="field-help" style="margin-top:10px">
+        Showing the {{ point_cap }} most recent reports.
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="map-panel map-panel-bl">
+    <div class="legend">
+      <span><i style="color:var(--low);background:var(--low)"></i> Low</span>
+      <span><i style="color:var(--medium);background:var(--medium)"></i> Medium</span>
+      <span><i style="color:var(--high);background:var(--high)"></i> High</span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{% static 'vendor/ol/ol.js' %}"></script>
+  <script type="module" src="{% static 'js/map.js' %}"></script>
+{% endblock %}

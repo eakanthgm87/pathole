@@ -1,0 +1,9 @@
+<resources>
+    <!-- Pure black so the system window matches the Compose canvas and there
+         is no flash of grey during startup. -->
+    <style name="Theme.PotholeWatch" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+</resources>

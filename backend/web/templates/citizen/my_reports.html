@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}My reports — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section class="wrap">
+  <div class="row-between row-wrap" style="margin-bottom:20px">
+    <div>
+      <h1 style="margin-bottom:4px">My reports</h1>
+      <p class="muted" style="margin:0">{{ page_obj.paginator.count }} total</p>
+    </div>
+    <a class="btn btn-primary" href="{% url 'web:report_new' %}">New report</a>
+  </div>
+
+  {% include "partials/filter_bar.html" %}
+
+  {% if page_obj.object_list %}
+    <div class="grid grid-3" data-reveal-group>
+      {% for report in page_obj %}{% include "partials/report_card.html" %}{% endfor %}
+    </div>
+    {% include "partials/pagination.html" %}
+  {% else %}
+    <div class="empty">
+      <span class="empty-icon">🕳️</span>
+      <p>Nothing here yet.</p>
+      <a class="btn btn-primary" href="{% url 'web:report_new' %}">Report your first pothole</a>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

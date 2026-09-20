@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Alerts — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section class="wrap-narrow">
+  <div class="row-between" style="margin-bottom:20px">
+    <h1 style="margin:0">Alerts</h1>
+    {% if unread_notifications %}
+      <form method="post">{% csrf_token %}
+        <button class="btn btn-sm" type="submit">Mark all read</button>
+      </form>
+    {% endif %}
+  </div>
+
+  {% for n in notifications %}
+    <div class="card" style="margin-bottom:10px;{% if not n.is_read %}border-color:var(--accent){% endif %}">
+      <div class="row-between">
+        <strong>{{ n.title }}</strong>
+        <span class="tiny faint nowrap">{{ n.created_at|timesince }} ago</span>
+      </div>
+      {% if n.body %}<p class="tiny muted" style="margin:6px 0 0">{{ n.body }}</p>{% endif %}
+      {% if n.report %}
+        <a class="btn btn-sm" style="margin-top:10px" href="{{ n.report.get_absolute_url }}">Open report</a>
+      {% endif %}
+    </div>
+  {% empty %}
+    <div class="empty"><span class="empty-icon">🔔</span><p>No alerts yet.</p></div>
+  {% endfor %}
+</section>
+{% endblock %}

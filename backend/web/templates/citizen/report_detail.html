@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Report — {{ SITE_NAME }}{% endblock %}
+{% block styles %}
+  <link rel="stylesheet" href="{% static 'vendor/ol/ol.css' %}">
+  <link rel="stylesheet" href="{% static 'css/map.css' %}">
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+{{ detections_json|json_script:"detections-data" }}
+<section class="wrap">
+  <div class="row-between row-wrap" style="margin-bottom:20px">
+    <div>
+      <h1 style="margin-bottom:6px">Report</h1>
+      <div class="row row-wrap" style="gap:8px">
+        <span class="chip chip-{{ report.severity }}">{{ report.get_severity_display }}</span>
+        <span class="chip chip-{{ report.workflow_status }} chip-plain">{{ report.get_workflow_status_display }}</span>
+        <span class="chip chip-{{ report.detection_status }} chip-plain">{{ report.get_detection_status_display }}</span>
+        {% if report.report_count > 1 %}<span class="chip chip-plain">{{ report.report_count }} reports</span>{% endif %}
+      </div>
+    </div>
+    {% if user.is_officer %}
+      <a class="btn btn-primary" href="{% url 'web:dashboard_report' report.id %}">Manage</a>
+    {% endif %}
+  </div>
+
+  <div class="manage-grid">
+    <div class="stack">
+      <div class="detect-canvas-wrap">
+        <img data-result-image src="{{ report.image.url }}" alt="Reported pothole" style="display:none">
+        <canvas data-result-canvas></canvas>
+      </div>
+
+      {% if report.notes %}
+        <div class="card"><h3 style="margin-top:0">Notes</h3><p style="margin:0">{{ report.notes }}</p></div>
+      {% endif %}
+
+      <div class="card">
+        <h3 style="margin-top:0">Comments</h3>
+        {% for c in comments %}
+          <div style="padding:10px 0;border-bottom:1px solid var(--stroke)">
+            <div class="row-between">
+              <strong class="tiny">
+                {{ c.author.display_name|default:"Removed user" }}
+                {% if c.is_internal %}<span class="chip chip-plain tiny">internal</span>{% endif %}
+              </strong>
+              <span class="tiny faint">{{ c.created_at|date:"j M, H:i" }}</span>
+            </div>
+            <p class="tiny" style="margin:4px 0 0">{{ c.body }}</p>
+          </div>
+        {% empty %}
+          <p class="tiny faint">No comments yet.</p>
+        {% endfor %}
+
+        <form method="post" action="{% url 'web:report_comment' report.id %}" style="margin-top:14px">
+          {% csrf_token %}
+          {% include "partials/form_field.html" with field=comment_form.body %}
+          {% if user.is_officer %}
+            <label class="checkbox-row tiny" style="margin-bottom:10px">
+              {{ comment_form.is_internal }} Internal note (hidden from the reporter)
+            </label>
+          {% endif %}
+          <button class="btn btn-sm btn-primary" type="submit">Post comment</button>
+        </form>
+      </div>
+    </div>
+
+    <aside class="stack">
+      <div class="card">
+        <h3 style="margin-top:0">Details</h3>
+        <dl class="meta-list">
+          <dt>Reported</dt><dd class="tiny">{{ report.created_at|date:"j M Y, H:i" }}</dd>
+          <dt>Confidence</dt><dd>{{ report.confidence|floatformat:3 }}</dd>
+          <dt>Severity score</dt><dd>{{ report.severity_score }}</dd>
+          <dt>Source</dt><dd class="tiny">{{ report.get_source_display }}</dd>
+          {% if report.accuracy_m %}<dt>GPS accuracy</dt><dd class="tiny">±{{ report.accuracy_m|floatformat:0 }}m</dd>{% endif %}
+          {% if report.ward %}<dt>Ward</dt><dd class="tiny">{{ report.ward.name }}</dd>{% endif %}
+        </dl>
+        {% if report.address %}<p class="tiny faint" style="margin:12px 0 0">{{ report.address }}</p>{% endif %}
+      </div>
+
+      <div class="card card-flush">
+        <div id="map" class="map-shell map-dark map-mini"
+             data-map data-zoom="17"
+             data-center="{{ report.longitude }},{{ report.latitude }}"></div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-top:0">Progress</h3>
+        {% include "partials/timeline.html" %}
+      </div>
+    </aside>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{% static 'vendor/ol/ol.js' %}"></script>
+  <script type="module" src="{% static 'js/map.js' %}"></script>
+  <script type="module" src="{% static 'js/upload.js' %}"></script>
+{% endblock %}

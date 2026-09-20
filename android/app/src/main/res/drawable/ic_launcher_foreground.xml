@@ -1,0 +1,9 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- A pothole: an irregular dark hole on the brand gradient background. -->
+    <path android:fillColor="#0B0B0F"
+        android:pathData="M36,46 C40,40 52,38 62,41 C72,44 76,52 73,60 C70,68 58,72 48,69 C38,66 32,56 36,46 Z" />
+    <path android:fillColor="#5B8CFF"
+        android:pathData="M44,52 C47,49 55,48 60,51 C64,53 65,58 62,61 C58,64 50,64 46,61 C43,59 42,55 44,52 Z" />
+</vector>

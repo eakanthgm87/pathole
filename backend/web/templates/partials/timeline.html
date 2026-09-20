@@ -1,0 +1,18 @@
+<ul class="timeline">
+  {% for h in history %}
+    <li>
+      <div>
+        {% if h.from_status %}
+          <span class="chip chip-{{ h.from_status }} chip-plain">{{ h.from_status|title }}</span> →
+        {% endif %}
+        <span class="chip chip-{{ h.to_status }}">{{ h.to_status|title }}</span>
+      </div>
+      {% if h.note %}<div class="muted tiny" style="margin-top:4px">{{ h.note }}</div>{% endif %}
+      <div class="timeline-time">
+        {{ h.created_at|date:"j M Y, H:i" }}{% if h.changed_by %} · {{ h.changed_by.display_name }}{% endif %}
+      </div>
+    </li>
+  {% empty %}
+    <li class="faint">No history yet.</li>
+  {% endfor %}
+</ul>

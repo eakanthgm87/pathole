@@ -1,0 +1,81 @@
+# --- Python / Django -------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtualenvs
+.venv/
+venv/
+env/
+
+# Secrets. Commit .env.example instead.
+.env
+.env.*
+!.env.example
+
+# Local database and user uploads: never deploy these.
+backend/db.sqlite3
+*.sqlite3
+backend/media/
+backend/staticfiles/
+
+# --- Node (only used for the dev screenshot tooling) ------------------------
+node_modules/
+package-lock.json
+
+# --- Android ----------------------------------------------------------------
+android/.gradle/
+android/build/
+android/app/build/
+android/captures/
+# Machine-specific SDK path.
+android/local.properties
+*.iml
+.cxx/
+
+# Build outputs. The APK is a build artifact, not source; publish it as a
+# release asset rather than committing 20+ MB per rebuild.
+*.apk
+*.aab
+*.aar
+
+# Firebase credentials, if push is ever switched on.
+android/app/google-services.json
+
+# --- Editors / OS -----------------------------------------------------------
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# --- Logs and scratch -------------------------------------------------------
+*.log
+/eval/
+/scratch/
+
+# --- IMPORTANT: the model weights are NOT ignored ---------------------------
+# Render builds from the git repo, so weights/*.pt must be committed or the
+# service boots with no model and every upload returns "analysis failed".
+#
+#   best.pt                 5.5 MB
+#   last.pt                 5.5 MB
+#   potholenet_yolo11m.pt    40 MB
+#   pothole_v8m.pt           52 MB   <- the active model
+#   total                    99 MB
+#
+# Every file is under GitHub's 100 MB hard limit, but they are over the
+# 50 MB warning threshold, so pushes will print a large-file warning. If the
+# repo gets unwieldy, move them to Git LFS:
+#
+#   git lfs install
+#   git lfs track "weights/*.pt"
+#   git add .gitattributes
+#
+# Render supports LFS on build. Do not simply ignore them.
+!weights/
+!weights/*.pt

@@ -1,0 +1,5 @@
+-r base.txt
+# Install CPU torch first so pip does not pull the multi-GB CUDA wheels:
+#   pip install --index-url https://download.pytorch.org/whl/cpu torch torchvision
+torch
+torchvision

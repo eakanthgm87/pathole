@@ -1,0 +1,279 @@
+/* Dashboard shell: fixed glass sidebar + scrolling content. */
+
+.dash {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  min-height: calc(100vh - var(--header-h));
+}
+
+.dash-side {
+  position: sticky;
+  top: var(--header-h);
+  height: calc(100vh - var(--header-h));
+  padding: 20px 14px;
+  border-right: 1px solid var(--stroke);
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(var(--blur-lg));
+  -webkit-backdrop-filter: blur(var(--blur-lg));
+  overflow-y: auto;
+}
+
+.dash-side h6 {
+  margin: 20px 10px 7px;
+  font-size: 0.68rem;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+}
+.dash-side h6:first-child { margin-top: 0; }
+
+.side-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  margin-bottom: 2px;
+  border-radius: var(--radius-sm);
+  color: var(--text-dim);
+  font-size: 0.89rem;
+  font-weight: 520;
+  transition: background 0.18s var(--ease), color 0.18s var(--ease);
+}
+.side-link:hover { background: var(--glass-2); color: var(--text); }
+.side-link.active {
+  background: var(--accent-soft);
+  color: var(--text);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.side-link .ico { width: 18px; text-align: center; opacity: 0.9; }
+.side-link .count {
+  margin-left: auto;
+  font-size: 0.72rem;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-main { padding: 26px 26px 64px; min-width: 0; }
+
+.page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+.page-head h1 { margin: 0; font-size: 1.6rem; }
+.page-head p { margin: 4px 0 0; font-size: 0.9rem; }
+
+/* --- KPI tiles ---------------------------------------------------------- */
+
+.kpi {
+  position: relative;
+  padding: 18px 20px;
+  border-radius: var(--radius);
+  border: 1px solid var(--stroke);
+  background: var(--glass-1);
+  overflow: hidden;
+}
+.kpi::after {
+  /* Corner bloom tinted per-tile via --kpi-tint. */
+  content: "";
+  position: absolute;
+  top: -55%; right: -25%;
+  width: 150px; height: 150px;
+  border-radius: 50%;
+  background: var(--kpi-tint, var(--accent-glow));
+  filter: blur(42px);
+  opacity: 0.5;
+  pointer-events: none;
+}
+.kpi-label {
+  font-size: 0.74rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+}
+.kpi-value {
+  margin-top: 6px;
+  font-size: 2rem;
+  font-weight: 680;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.kpi-sub { font-size: 0.8rem; color: var(--text-dim); margin-top: 3px; }
+
+.kpi-high  { --kpi-tint: rgba(255, 90, 110, 0.5); }
+.kpi-ok    { --kpi-tint: rgba(53, 208, 165, 0.5); }
+.kpi-warn  { --kpi-tint: rgba(245, 184, 61, 0.5); }
+
+/* --- charts ------------------------------------------------------------- */
+
+.chart-card { padding: 18px 20px; }
+.chart-card h3 { font-size: 0.95rem; margin-bottom: 14px; color: var(--text-dim); }
+.chart-box { position: relative; height: 260px; }
+.chart-box-sm { height: 210px; }
+
+/* --- filter bar --------------------------------------------------------- */
+
+.filter-bar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  padding: 15px 18px;
+  margin-bottom: 18px;
+}
+.filter-bar .field { margin: 0; min-width: 140px; flex: 1 1 140px; }
+.filter-bar .field-label { font-size: 0.72rem; }
+.filter-bar .actions { display: flex; gap: 8px; }
+
+/* --- report manage ------------------------------------------------------ */
+
+.manage-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.85fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.detect-canvas-wrap {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--stroke);
+  background: #000;
+  line-height: 0;
+}
+.detect-canvas-wrap canvas, .detect-canvas-wrap img { width: 100%; height: auto; display: block; }
+
+.meta-list { display: grid; grid-template-columns: auto 1fr; gap: 9px 16px; font-size: 0.88rem; }
+.meta-list dt { color: var(--text-faint); }
+.meta-list dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* --- timeline ----------------------------------------------------------- */
+
+.timeline { list-style: none; margin: 0; padding: 0 0 0 22px; position: relative; }
+.timeline::before {
+  content: "";
+  position: absolute;
+  left: 5px; top: 6px; bottom: 6px;
+  width: 1px;
+  background: var(--stroke);
+}
+.timeline li { position: relative; padding-bottom: 16px; font-size: 0.87rem; }
+.timeline li::before {
+  content: "";
+  position: absolute;
+  left: -21px; top: 6px;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px rgba(91, 140, 255, 0.18);
+}
+.timeline li:last-child { padding-bottom: 0; }
+.timeline-time { color: var(--text-faint); font-size: 0.76rem; }
+
+/* --- review queue ------------------------------------------------------- */
+
+.review-stage { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr); gap: 20px; }
+.review-img { width: 100%; border-radius: var(--radius); border: 1px solid var(--stroke); }
+.kbd {
+  display: inline-block;
+  min-width: 22px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid var(--stroke-strong);
+  background: var(--glass-2);
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  text-align: center;
+}
+
+/* --- bulk bar ----------------------------------------------------------- */
+
+.bulk-bar {
+  position: sticky;
+  bottom: 16px;
+  z-index: 40;
+  display: none;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 18px;
+  margin-top: 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--stroke-strong);
+  background: rgba(10, 10, 14, 0.88);
+  backdrop-filter: blur(var(--blur-lg));
+  -webkit-backdrop-filter: blur(var(--blur-lg));
+  box-shadow: var(--shadow-lg);
+}
+.bulk-bar.show { display: flex; }
+
+@media (max-width: 1100px) {
+  .manage-grid, .review-stage { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 860px) {
+  .dash { grid-template-columns: 1fr; }
+  .dash-side {
+    position: fixed;
+    inset: var(--header-h) auto 0 0;
+    width: var(--sidebar-w);
+    z-index: 80;
+    transform: translateX(-100%);
+    transition: transform 0.26s var(--ease);
+  }
+  .dash-side.open { transform: none; }
+  .dash-main { padding: 18px 16px 56px; }
+}
+
+/* --- motion ------------------------------------------------------------- */
+
+/* KPI tiles rise in on load, staggered, so the dashboard assembles itself
+   rather than appearing all at once. */
+.kpi { animation: kpi-in 0.6s var(--ease) both; }
+.grid-4 > .kpi:nth-child(1) { animation-delay: 0.02s; }
+.grid-4 > .kpi:nth-child(2) { animation-delay: 0.09s; }
+.grid-4 > .kpi:nth-child(3) { animation-delay: 0.16s; }
+.grid-4 > .kpi:nth-child(4) { animation-delay: 0.23s; }
+@keyframes kpi-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Sidebar active marker slides rather than jumping between pages. */
+.side-link.active { animation: side-in 0.35s var(--ease); }
+@keyframes side-in {
+  from { box-shadow: inset 0 0 0 var(--accent); }
+  to   { box-shadow: inset 2px 0 0 var(--accent); }
+}
+
+/* Manage-page action drawers open smoothly. */
+details > summary { cursor: pointer; list-style: none; transition: transform 0.18s var(--ease); }
+details > summary::-webkit-details-marker { display: none; }
+details[open] > summary { transform: translateY(-1px); }
+details > *:not(summary) { animation: drawer 0.3s var(--ease); }
+@keyframes drawer {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Bulk bar slides up from the bottom when a selection exists. */
+.bulk-bar.show { animation: bulk-in 0.32s var(--ease); }
+@keyframes bulk-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Review queue: the card being decided gets a soft entrance. */
+.review-stage { animation: kpi-in 0.5s var(--ease) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .kpi, .review-stage, .bulk-bar.show, details > *:not(summary), .side-link.active {
+    animation: none !important;
+  }
+}
