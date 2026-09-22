@@ -643,3 +643,87 @@ thead th { border-bottom-color: rgba(255, 255, 255, 0.1); }
 
 /* A hair of feedback on press, consistent with the other controls. */
 .switch .slider:active::before { transform: translateY(-50%) scale(0.92); }
+
+/* --- logo ---------------------------------------------------------------
+   Radar sweep over a pothole. The arm rotates continuously but it is a
+   single transform on a tiny element, so it stays on the compositor.
+   ----------------------------------------------------------------------- */
+
+.logo-mark {
+  display: block;
+  flex: none;
+  border-radius: 28%;
+  filter: drop-shadow(0 2px 10px rgba(91, 140, 255, 0.4));
+  transition: transform 0.4s var(--ease), filter 0.4s var(--ease);
+}
+
+.logo-sweep {
+  transform-origin: 24px 24px;
+  animation: logo-scan 4.5s linear infinite;
+}
+
+@keyframes logo-scan { to { transform: rotate(360deg); } }
+
+/* The pit breathes very slightly, so the mark is alive even when the sweep
+   is behind it. */
+.logo-pit {
+  transform-origin: 24px 26px;
+  animation: logo-pulse 4.5s ease-in-out infinite;
+}
+
+@keyframes logo-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.06); }
+}
+
+/* Hovering the brand speeds the sweep up and lifts the mark. */
+.brand:hover .logo-mark {
+  transform: scale(1.06) rotate(-3deg);
+  filter: drop-shadow(0 4px 16px rgba(91, 140, 255, 0.65));
+}
+.brand:hover .logo-sweep { animation-duration: 1.6s; }
+
+.logo-mark.is-still .logo-sweep,
+.logo-mark.is-still .logo-pit { animation: none; }
+
+/* --- icons --------------------------------------------------------------- */
+
+.ico {
+  flex: none;
+  vertical-align: -0.15em;
+  /* Stroke icons read thin at small sizes on a dark background; a hair of
+     extra weight in the sidebar keeps them even with the label text. */
+  opacity: 0.92;
+}
+
+.side-link .ico { opacity: 0.7; transition: opacity 0.18s var(--ease), transform 0.18s var(--ease); }
+.side-link:hover .ico { opacity: 1; }
+.side-link.active .ico { opacity: 1; color: var(--accent); }
+
+.btn .ico { margin-right: -2px; }
+
+/* Landing "three steps" icon tile. */
+.step-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 14px;
+  border-radius: 13px;
+  color: var(--accent);
+  background: linear-gradient(140deg, rgba(91, 140, 255, 0.18), rgba(157, 107, 255, 0.08));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+  transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
+}
+.card-hover:hover .step-icon {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18),
+              0 6px 20px rgba(91, 140, 255, 0.25);
+}
+
+.empty-icon { color: var(--text-faint); display: inline-block; margin-bottom: 10px; }
+.empty-icon .ico { opacity: 0.55; }
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-sweep, .logo-pit { animation: none !important; }
+}

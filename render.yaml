@@ -81,6 +81,16 @@ services:
       - key: LOG_LEVEL
         value: INFO
 
+      # First admin account, created once during the build. Change the email
+      # before deploying. Leave ADMIN_PASSWORD unset and Render generates one
+      # and prints it in the build log (visible only to you).
+      - key: ADMIN_EMAIL
+        value: admin@potholewatch.app
+      - key: ADMIN_NAME
+        value: Administrator
+      - key: ADMIN_PASSWORD
+        sync: false
+
 databases:
   - name: potholewatch-db
     plan: basic-256mb

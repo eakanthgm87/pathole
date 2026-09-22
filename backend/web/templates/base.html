@@ -7,7 +7,7 @@
   <meta name="description" content="{% block description %}Report potholes in seconds. AI-verified, mapped, and tracked until they are fixed.{% endblock %}">
   <title>{% block title %}{{ SITE_NAME }}{% endblock %}</title>
 
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='11' fill='%235B8CFF'/><path d='M13 29c-1.5-2 .5-4.6 3.4-5.3 2.6-.6 6 .1 8.3 1.4 2.6 1.5 3.3 3.8 1.2 5.2-2.1 1.4-6.1 1.8-9 1.2-2-.4-3.3-1.3-3.9-2.5Z' fill='%23090910'/><path d='M6 33.5 15.5 12h9L34 33.5' stroke='white' stroke-opacity='.3' stroke-width='1.8' fill='none'/></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><rect width='48' height='48' rx='13' fill='%235B8CFF'/><circle cx='24' cy='24' r='15.5' stroke='white' stroke-opacity='.25' stroke-width='1.5' fill='none'/><circle cx='24' cy='24' r='9.5' stroke='white' stroke-opacity='.32' stroke-width='1.5' fill='none'/><path d='M17.4 26.8c-1-1.7.6-3.6 3-4.1 2.2-.5 5 .1 6.9 1.2 2.1 1.2 2.6 3.1.9 4.2-1.8 1.2-5.1 1.5-7.5 1-1.6-.3-2.8-1.1-3.3-2.3Z' fill='%230A0A12'/></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -30,13 +30,7 @@
     <div class="row" style="gap:16px">
       {% block sidebar_toggle %}{% endblock %}
       <a class="brand" href="{% url 'web:landing' %}" aria-label="{{ SITE_NAME }} home">
-        {# Gradient wash behind the mark, adapted from Uiverse.io by dexter-st. #}
-        <span class="brand-anim" aria-hidden="true">
-          <span class="layer"></span>
-          <span class="layer"></span>
-          <span class="sheen"></span>
-          <span class="glyph">{% include "partials/logo.html" with size=34 %}</span>
-        </span>
+        {% include "partials/logo.html" with size=34 %}
         <span class="brand-text">{{ SITE_NAME }}</span>
       </a>
     </div>

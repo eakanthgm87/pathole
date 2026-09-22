@@ -9,8 +9,13 @@
  */
 import { $, postForm, drawDetections } from './core.js';
 
-const FRAME_QUALITY = 0.65;
-const MAX_EDGE = 640; // downscale before upload; the model runs at 480 anyway
+const FRAME_QUALITY = 0.7;
+// The server infers at 416; sending much more than that just costs upload
+// and JPEG-decode time for detail the model never sees.
+const MAX_EDGE = 512;
+// Keep drawing the last boxes for this long after the result that produced
+// them. The detector runs at ~3 fps; without this the overlay strobes.
+const HOLD_MS = 1400;
 
 export class LiveDetector {
   constructor(root) {
@@ -31,6 +36,7 @@ export class LiveDetector {
     this.running = false;
     this.busy = false;
     this.lastDetections = [];
+    this.lastDetectionAt = 0;
     this.frameTimes = [];
     this.location = null;
     this.scratch = document.createElement('canvas');
@@ -177,6 +183,8 @@ export class LiveDetector {
   }
 
   clearOverlay() {
+    this.lastDetections = [];
+    this.lastDetectionAt = 0;
     if (!this.overlay) return;
     const ctx = this.overlay.getContext('2d');
     ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
@@ -228,10 +236,18 @@ export class LiveDetector {
         // Boxes come back in the downscaled frame's pixel space; rescale to
         // the source video so the overlay lines up at any display size.
         const inv = 1 / frame.scale;
-        this.lastDetections = (body.detections || []).map((d) => ({
+        const found = (body.detections || []).map((d) => ({
           ...d,
           bbox: d.bbox.map((v) => Math.round(v * inv)),
         }));
+        // Only replace the overlay when this frame found something, or when
+        // the previous boxes have aged out. A single empty frame between two
+        // hits would otherwise blink the boxes off.
+        const aged = performance.now() - this.lastDetectionAt > HOLD_MS;
+        if (found.length || aged) {
+          this.lastDetections = found;
+          if (found.length) this.lastDetectionAt = performance.now();
+        }
         this.render(frame.vw, frame.vh);
         this.updateHud(body, performance.now() - t0);
       } else if (!body.ok && body.error) {
@@ -244,6 +260,13 @@ export class LiveDetector {
     if (!this.overlay) return;
     this.overlay.width = vw;
     this.overlay.height = vh;
+    // Older boxes dim rather than vanish, so a missed frame looks like the
+    // detector thinking, not like the feature breaking.
+    const age = performance.now() - this.lastDetectionAt;
+    const fade = this.lastDetections.length
+      ? Math.max(0.35, 1 - Math.max(0, age - 400) / HOLD_MS)
+      : 1;
+    this.overlay.style.opacity = String(fade);
     drawDetections(this.overlay, { naturalWidth: vw, naturalHeight: vh }, this.lastDetections, {
       drawImage: false,
     });

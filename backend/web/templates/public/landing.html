@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static humanize %}
+{% load static humanize icons %}
 
 {% block title %}{{ SITE_NAME }} — {{ SITE_TAGLINE }}{% endblock %}
 
@@ -61,17 +61,17 @@
   <p class="center muted" style="margin-bottom:34px">No forms to fill in, no phone calls to make.</p>
   <div class="grid grid-3">
     <div class="card card-hover">
-      <div style="font-size:1.9rem;margin-bottom:10px">📸</div>
+      <div class="step-icon">{% icon "camera" size=24 %}</div>
       <h3>1. Capture</h3>
       <p>Take a photo from your phone or laptop. Your location is attached automatically, or drop a pin yourself.</p>
     </div>
     <div class="card card-hover">
-      <div style="font-size:1.9rem;margin-bottom:10px">🧠</div>
+      <div class="step-icon">{% icon "brain" size=24 %}</div>
       <h3>2. Verified</h3>
       <p>A YOLO detector finds the hole, draws a box around it and scores severity from how much road it eats.</p>
     </div>
     <div class="card card-hover">
-      <div style="font-size:1.9rem;margin-bottom:10px">🛠️</div>
+      <div class="step-icon">{% icon "wrench" size=24 %}</div>
       <h3>3. Tracked</h3>
       <p>Officers verify, assign and close it with an after-photo. You get an alert at every step.</p>
     </div>

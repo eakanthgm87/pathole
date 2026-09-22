@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static icons %}
 
 {% block styles %}
   <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
@@ -17,34 +17,34 @@
   <aside class="dash-side">
     <h6>Operations</h6>
     <a class="side-link {% if request.resolver_match.url_name == 'dashboard_overview' %}active{% endif %}"
-       href="{% url 'web:dashboard_overview' %}"><span class="ico">◈</span> Overview</a>
+       href="{% url 'web:dashboard_overview' %}">{% icon "grid" %} Overview</a>
     <a class="side-link {% if request.resolver_match.url_name == 'dashboard_map' %}active{% endif %}"
-       href="{% url 'web:dashboard_map' %}"><span class="ico">◉</span> Live map</a>
+       href="{% url 'web:dashboard_map' %}">{% icon "map" %} Live map</a>
     <a class="side-link {% if request.resolver_match.url_name == 'dashboard_reports' %}active{% endif %}"
-       href="{% url 'web:dashboard_reports' %}"><span class="ico">▤</span> Reports</a>
+       href="{% url 'web:dashboard_reports' %}">{% icon "table" %} Reports</a>
     <a class="side-link {% if request.resolver_match.url_name == 'dashboard_review' %}active{% endif %}"
-       href="{% url 'web:dashboard_review' %}"><span class="ico">◍</span> Review queue</a>
+       href="{% url 'web:dashboard_review' %}">{% icon "review" %} Review queue</a>
     <a class="side-link {% if request.resolver_match.url_name == 'dashboard_tasks' %}active{% endif %}"
-       href="{% url 'web:dashboard_tasks' %}"><span class="ico">✓</span> My tasks</a>
+       href="{% url 'web:dashboard_tasks' %}">{% icon "check" %} My tasks</a>
 
     <h6>Insight</h6>
     <a class="side-link {% if request.resolver_match.url_name == 'dashboard_analytics' %}active{% endif %}"
-       href="{% url 'web:dashboard_analytics' %}"><span class="ico">◐</span> Analytics</a>
+       href="{% url 'web:dashboard_analytics' %}">{% icon "chart" %} Analytics</a>
     <a class="side-link {% if request.resolver_match.url_name == 'dashboard_wards' %}active{% endif %}"
-       href="{% url 'web:dashboard_wards' %}"><span class="ico">◰</span> Wards</a>
+       href="{% url 'web:dashboard_wards' %}">{% icon "layers" %} Wards</a>
 
     {% if user.is_admin %}
       <h6>Administration</h6>
       <a class="side-link {% if request.resolver_match.url_name == 'dashboard_users' %}active{% endif %}"
-         href="{% url 'web:dashboard_users' %}"><span class="ico">◎</span> Users</a>
+         href="{% url 'web:dashboard_users' %}">{% icon "users" %} Users</a>
       <a class="side-link {% if request.resolver_match.url_name == 'dashboard_settings' %}active{% endif %}"
-         href="{% url 'web:dashboard_settings' %}"><span class="ico">⚙</span> Model &amp; settings</a>
-      <a class="side-link" href="/admin/"><span class="ico">▣</span> Django admin</a>
+         href="{% url 'web:dashboard_settings' %}">{% icon "cog" %} Model &amp; settings</a>
+      <a class="side-link" href="/admin/">{% icon "shield" %} Django admin</a>
     {% endif %}
 
     <h6>Public site</h6>
-    <a class="side-link" href="{% url 'web:map' %}"><span class="ico">↗</span> Public map</a>
-    <a class="side-link" href="{% url 'web:live' %}"><span class="ico">◉</span> Live detection</a>
+    <a class="side-link" href="{% url 'web:map' %}">{% icon "external" %} Public map</a>
+    <a class="side-link" href="{% url 'web:live' %}">{% icon "video" %} Live detection</a>
   </aside>
 
   <div class="dash-main">

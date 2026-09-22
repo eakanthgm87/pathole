@@ -145,9 +145,16 @@ DETECTION = {
             {"weights": "pothole_v8m.pt", "imgsz": 960, "augment": False},
             {"weights": "best.pt", "imgsz": 960, "augment": False},
         ],
-        # Nano model only: 55 ms, ~18 fps. Big models cannot hold a stream.
+        # Live stream. Measured on live-style frames (downscaled to 640,
+        # JPEG q65) because that is what the browser actually sends:
+        #   best.pt      @480 ... 45.5% recall,  8.8 fps   <- felt broken
+        #   best.pt      @640 ... 54.5% recall,  7.2 fps
+        #   pothole_v8m  @416 ... 84.8% recall,  3.2 fps   <- chosen
+        #   pothole_v8m  @512 ... 93.9% recall,  2.3 fps
+        # 3 fps that finds potholes beats 9 fps that misses them; the client
+        # holds boxes between results so the overlay still looks continuous.
         "live": [
-            {"weights": "best.pt", "imgsz": 480, "augment": False},
+            {"weights": "pothole_v8m.pt", "imgsz": 416, "augment": False},
         ],
     },
     "UPLOAD_PROFILE": os.getenv("UPLOAD_PROFILE", "fast"),
@@ -164,9 +171,12 @@ DETECTION = {
     # distribution (median 34). See detection/scoring.severity_band.
     "SEVERITY_MEDIUM": float(os.getenv("SEVERITY_MEDIUM", "20")),
     "SEVERITY_HIGH": float(os.getenv("SEVERITY_HIGH", "50")),
-    # Live video runs smaller and looser for responsiveness.
-    "LIVE_IMGSZ": int(os.getenv("LIVE_IMGSZ", "640")),
-    "LIVE_CONF": float(os.getenv("LIVE_CONF", "0.25")),
+    # Live confidence floor. The profile above owns imgsz; this is only the
+    # threshold, kept low because a live sweep is a first pass, not a verdict.
+    "LIVE_CONF": float(os.getenv("LIVE_CONF", "0.20")),
+    # How long the client keeps drawing a box after the result that produced
+    # it, so a 3 fps detector does not visibly strobe.
+    "LIVE_HOLD_MS": int(os.getenv("LIVE_HOLD_MS", "1400")),
 }
 DUPLICATE_RADIUS_M = float(os.getenv("DUPLICATE_RADIUS_M", "15"))
 MAX_UPLOAD_BYTES = int(os.getenv("MAX_UPLOAD_BYTES", str(8 * 1024 * 1024)))

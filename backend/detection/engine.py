@@ -279,7 +279,9 @@ def detect_frame(frame_bytes: bytes) -> InferenceResult:
     specs = _profile(d["LIVE_PROFILE"])[:1]  # live gets exactly one pass
     spec = specs[0]
     try:
-        dets = _pass(frame, spec["path"], d["LIVE_IMGSZ"], d["LIVE_CONF"], False)
+        # imgsz comes from the profile so the whole live config lives in one
+        # place; previously a separate LIVE_IMGSZ silently overrode it.
+        dets = _pass(frame, spec["path"], spec["imgsz"], d["LIVE_CONF"], False)
     except Exception as exc:
         log.exception("live inference failed")
         return InferenceResult(error=str(exc))
